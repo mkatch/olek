@@ -28,7 +28,7 @@ let rec make_objs n mind =
 let init () =
   Sdl.init [`VIDEO];
   let canvas = Canvas.init ~w:800 ~h:600 in
-  let objs = make_objs 100 Minds.square in
+  let objs = make_objs 1 Minds.dummy in
   let bodies, minds = List.unzip objs in {
     canvas = canvas;
     bodies = bodies;
@@ -77,9 +77,17 @@ let process_obj_events events = function
 
 let think = process_obj_events [Objevent.NextFrame]
 
+let focus = function
+  | None -> None
+  | Some state ->
+    let c = state.canvas in
+    let b = List.hd_exn state.bodies in
+    Some { state with canvas = Canvas.focus b.Body.pos c }
+
 let iter state =
   draw state;
   let state, obj_events = process_events state in
   let state = process_obj_events obj_events state in
   let state = think state in
+  let state = focus state in
   state
