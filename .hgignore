@@ -1,6 +1,7 @@
 syntax: glob
 
 .DS_Store
+*.sublime-workspace
 
 _build
 *.native
