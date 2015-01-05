@@ -1,0 +1,21 @@
+{
+  "folders":
+  [
+    {
+      "path": ".",
+      "folder_exclude_patterns": ["_build"],
+      "file_exclude_patterns": ["game.native", "game"]
+    }
+  ],
+  "setings":
+  {
+    "tab_size": 2
+  },
+  "build_systems":
+  [
+    {
+      "name": "Olek",
+      "cmd": ["./make", "game"]
+    }
+  ]
+}

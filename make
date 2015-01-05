@@ -1,4 +1,6 @@
-#!/bin/sh
+#!/bin/bash
+
+source ~/.bash_profile
 
 set -e
 
@@ -12,7 +14,7 @@ make_game ()
 }
 
 if [ $# -eq 0 ]; then
-  rule all
+  make_game
 else
   while [ $# -gt 0 ]; do
     case $1 in

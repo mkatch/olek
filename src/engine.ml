@@ -1,60 +1,86 @@
 open Core.Std
 open Utils
+open Sdlevent
 open Sdlkey
 open Printf
-
-include Engine_sub
+open Mind
 
 type state = {
-  screen : Sdlvideo.surface;
-  objects : Object.t list
+  canvas : Canvas.t;
+  room : Room.t;
+  bodies : Body.t list;
+  minds : mind list;
 }
 
-let rec make_objects n mind =
-  if n <= 0 then []
-  else 
-    Object.create (Vector.make (Random.float 800.) (Random.float 600.)) mind
-    :: make_objects (n - 1) mind
+let draw state =
+  let c = state.canvas in
+  Canvas.draw_room c state.room;
+  List.iter ~f:(Canvas.draw_body c) state.bodies;
+  Canvas.flip c
 
-let create () =
+let rec make_objs n mind =
+  if n <= 0 then []
+  else
+    let x = Random.float 800. and y = Random.float 600. in
+    let (body, mindi, cmds) = Object.create (make_v x y) mind in
+    (body, mindi) :: make_objs (n - 1) mind
+
+let init () =
   Sdl.init [`VIDEO];
-  let screen = Sdlvideo.set_video_mode ~w:800 ~h:600 [] in
-  let square = (module Square : Object.Mind)
-  in {
-    screen;
-    objects = make_objects 1000 square
+  let canvas = Canvas.init ~w:800 ~h:600 in
+  let square = (module Square : MIND) in
+  let objs = make_objs 100 square in
+  let bodies, minds = List.unzip objs in {
+    canvas = canvas;
+    bodies = bodies;
+    minds = minds;
+    room = Room.{layers = [
+      Uniform Sdlvideo.green;
+      Tiled (
+        make_tileset "data/tileset.png" 16,
+        Grid.of_lists [
+          [1; 4; 7; 2; 8; 7];
+          [4; 2; 8; 9; 1; 2];
+          [5; 7; 2; 1; 8; 9];
+          [5; 7; 2; 8; 9; 8];
+          [1; 9; 3; 4; 5; 2];
+          [9; 8; 7; 6; 5; 4]
+        ]
+      )
+    ]};
   }
 
-let finalize () =
-  Sdl.quit ()
+let quit () = Sdl.quit ()
 
-let clear screen =
-  let c = Sdlvideo.(map_RGB screen Sdlvideo.white)
-  in Sdlvideo.fill_rect screen c
+let process_event state event =
+  match event with
+  | QUIT
+  | KEYDOWN {keysym = KEY_ESCAPE} -> None
+  | _ -> Some state
 
-let think_all objs = List.map ~f:Object.think objs
-
-let draw_all screen bodies =
-  clear screen;
-  let c = Sdlvideo.(map_RGB screen black) in
-  let draw b =
-    let r = Body.to_sdl_rect b
-    in Sdlvideo.fill_rect ~rect:r screen c
-  in List.iter ~f:draw bodies
-
-let iter state =
-  let rec process_events state =
+let process_events state =
+  let rec aux state events =
     match Sdlevent.poll () with
-    | None -> Some state
-    | Some event -> Sdlevent.(match event with
-      | QUIT
-      | KEYDOWN { keysym = KEY_ESCAPE } -> None
-      | _ -> process_events state
-    )
-  in match process_events state with
+    | None -> (Some state, List.(concat_map ~f:Objevent.of_sdl_event (rev events)))
+    | Some event -> match process_event state event with
+      | None -> (None, [])
+      | Some state' -> aux state' (event :: events) in
+  aux state []
+
+let process_obj_events events = function
   | None -> None
   | Some state ->
-    let objects' = think_all state.objects in
-    draw_all state.screen (List.map ~f:Object.body objects');
-    Sdlvideo.flip state.screen;
-    Some { state with objects = objects' }
+    let env = Env.dummy in
+    let objs_cmdss = List.map2_exn ~f:(Object.dispatch_events events env)
+      state.bodies state.minds in
+    let bodies, minds, cmdss = unzip3 objs_cmdss in
+    Some { state with bodies = bodies; minds = minds }
+
+let think = process_obj_events [Objevent.NextFrame]
+
+let iter state =
+  draw state;
+  let state, obj_events = process_events state in
+  let state = process_obj_events obj_events state in
+  let state = think state in
+  state

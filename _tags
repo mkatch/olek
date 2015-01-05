@@ -1,4 +1,4 @@
 <src>: include
-<src/**/*.ml> or <src/**/*.mli> or <src/game.native>: package(core), package(sdl), thread
-<src/engine/*.cmx>: for-pack(Engine_sub)
-<src/utils/*.cmx>: for-pack(Utils)
+<src/**/*.ml> or <src/**/*.mli> or <src/game.native>: \
+  package(core), package(bigarray), package(sdl), package(sdl.sdlimage), thread
+<src/utils/*.cmx>: for-pack(Utils_sub)

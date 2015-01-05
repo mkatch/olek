@@ -1,5 +1,7 @@
 syntax: glob
 
+.DS_Store
+
 _build
 *.native
 *.byte
