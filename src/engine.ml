@@ -28,8 +28,7 @@ let rec make_objs n mind =
 let init () =
   Sdl.init [`VIDEO];
   let canvas = Canvas.init ~w:800 ~h:600 in
-  let square = (module Square : MIND) in
-  let objs = make_objs 100 square in
+  let objs = make_objs 100 Minds.square in
   let bodies, minds = List.unzip objs in {
     canvas = canvas;
     bodies = bodies;
