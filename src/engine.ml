@@ -33,7 +33,7 @@ let init () =
     canvas = canvas;
     bodies = bodies;
     minds = minds;
-    room = Room.{layers = [
+    room = Room.of_file "data/room.orm";(*Room.{layers = [
       Uniform Sdlvideo.green;
       Tiled (
         make_tileset "data/tileset.png" 16,
@@ -46,7 +46,7 @@ let init () =
           [9; 8; 7; 6; 5; 4]
         ]
       )
-    ]};
+    ]};*)
   }
 
 let quit () = Sdl.quit ()
