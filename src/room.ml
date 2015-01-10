@@ -5,10 +5,7 @@ type tile =
   | Void
   | Solid
   | TopSolid
-  | SidesSticky
-  | LeftSticky
-  | RightSticky
-  | FrontSticky
+  | Sticky
 
 type tileset = {
   image : Sdlvideo.surface;
@@ -29,10 +26,7 @@ type t = {
 let tile_of_char = function
   | '#' -> Solid
   | '^' -> TopSolid
-  | 'X' -> SidesSticky
-  | '>' -> LeftSticky
-  | '<' -> RightSticky
-  | '-' -> FrontSticky
+  | 'X' -> Sticky
   |  _  -> Void
 
 let input_tiles inch =
@@ -46,17 +40,6 @@ let input_tiles inch =
   Printf.printf "rows: %d\n" (List.length rows);
   Grid.of_lists rows
 
-let make_tileset ~image_file ~tile_size =
-  try
-    let image = Sdlloader.load_image image_file in
-    let w, h, _ = Sdlvideo.surface_dims image
-    in {
-      image = image;
-      tile_size = tile_size;
-      rows = h / tile_size;
-      cols = w / tile_size;
-    }
-  with Sdlloader.SDLloader_exception e -> failwith ("make_tileset: " ^ e) 
 
 let input_uniform_layer inch =
   let color = In_channel.input_line inch
@@ -78,8 +61,35 @@ let input_layers inch =
                        "'") in
   aux []
 
+
+let make_tileset ~image_file ~tile_size =
+  try
+    let image = Sdlloader.load_image image_file in
+    let w, h, _ = Sdlvideo.surface_dims image
+    in {
+      image = image;
+      tile_size = tile_size;
+      rows = h / tile_size;
+      cols = w / tile_size;
+    }
+  with Sdlloader.SDLloader_exception e -> failwith ("make_tileset: " ^ e) 
+
 let of_file filename =
   let file = In_channel.create filename in
   let tiles = input_tiles file in
   let layers = input_layers file in
   { tiles; layers }
+
+let make_tiles_layer tiles =
+  let aux = function
+    | Void -> 0
+    | Solid -> 2
+    | TopSolid -> 4
+    | Sticky -> 5 in
+  let tileset = make_tileset ~image_file:"data/tiles.png" ~tile_size:16 in
+  let grid = Grid.map ~f:aux tiles in
+  Tiled (tileset, grid)
+
+let add_tiles_layer room =
+  let tl = make_tiles_layer room.tiles in
+  { room with layers = room.layers @ [tl] }

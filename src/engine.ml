@@ -29,24 +29,13 @@ let init () =
   Sdl.init [`VIDEO];
   let canvas = Canvas.init ~w:800 ~h:600 in
   let objs = make_objs 1 Minds.dummy in
-  let bodies, minds = List.unzip objs in {
+  let bodies, minds = List.unzip objs in
+  let room = Room.of_file "data/room.orm" in
+  let room = Room.add_tiles_layer room in {
     canvas = canvas;
     bodies = bodies;
     minds = minds;
-    room = Room.of_file "data/room.orm";(*Room.{layers = [
-      Uniform Sdlvideo.green;
-      Tiled (
-        make_tileset "data/tileset.png" 16,
-        Grid.of_lists [
-          [1; 4; 7; 2; 8; 7];
-          [4; 2; 8; 9; 1; 2];
-          [5; 7; 2; 1; 8; 9];
-          [5; 7; 2; 8; 9; 8];
-          [1; 9; 3; 4; 5; 2];
-          [9; 8; 7; 6; 5; 4]
-        ]
-      )
-    ]};*)
+    room = room;
   }
 
 let quit () = Sdl.quit ()

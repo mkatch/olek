@@ -35,18 +35,18 @@ let draw_tiled_layer c tileset grid =
   let open Room in
   let s = tileset.tile_size in
   let (ox, oy) = Vector.to_int_pair c.offset in
-  let draw_tile i j k =
+  let draw_tile i j k = if k > 0 then
     let src_rect = {
       r_x = ((k - 1) mod tileset.cols) * s; r_y = (k - 1) / tileset.cols * s;
       r_w = s; r_h = s; 
     } in
     let dst_rect = {
-      r_x = i * s - ox; r_y = j * s - oy;
+      r_x = j * s - ox; r_y = i * s - oy;
       r_w = s; r_h = s
     }
     in blit_surface ~src:tileset.image ~src_rect:src_rect
                     ~dst:c.surface     ~dst_rect:dst_rect () in
-  Grid.iteri ~f:draw_tile ~r_beg:0 ~c_beg:0 ~r_end:5 ~c_end:5 grid
+  Grid.iteri ~f:draw_tile grid
 
 let draw_room_layer c = function
   | Room.Uniform color -> draw_uniform_layer c color

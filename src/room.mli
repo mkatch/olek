@@ -4,10 +4,7 @@ type tile =
   | Void
   | Solid
   | TopSolid
-  | SidesSticky
-  | LeftSticky
-  | RightSticky
-  | FrontSticky
+  | Sticky
 
 type tileset = {
   image : Sdlvideo.surface;
@@ -27,4 +24,4 @@ type t = {
 
 val of_file : string -> t
 
-val make_tileset : image_file:string -> tile_size:int -> tileset
+val add_tiles_layer : t -> t
