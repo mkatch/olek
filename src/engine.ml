@@ -51,7 +51,8 @@ let env_of_state state =
   let time = state.time in
   Env.{
     t = Float.of_int (time.frame * time.dt_ms) /. 1000.;
-    dt = Float.of_int time.dt_ms /. 1000.; 
+    dt = Float.of_int time.dt_ms /. 1000.;
+    tiles = state.room.Room.tiles;
   }
 
 let draw state =

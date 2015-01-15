@@ -5,9 +5,10 @@ type t = {
   pos : vector;
   w : int;
   h : int;
+  color : Sdlvideo.color;
 }
 
-let make pos w h = {pos; w; h}
+let make pos w h = {pos; w; h; color = Sdlvideo.black; }
 
 let move_by body dpos = {body with pos = body.pos +^ dpos}
 

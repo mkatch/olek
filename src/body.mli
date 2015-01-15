@@ -5,6 +5,7 @@ type t = {
   pos : vector;
   w : int;
   h : int;
+  color : Sdlvideo.color;
 }
 
 val make : vector -> int -> int -> t

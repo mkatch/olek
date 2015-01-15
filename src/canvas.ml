@@ -56,6 +56,6 @@ let draw_room c room =
   List.iter ~f:(draw_room_layer c) room.Room.layers
 
 let draw_body c body =
-  let color = Sdlvideo.(map_RGB c.surface black) in
+  let color = Sdlvideo.map_RGB c.surface body.Body.color in
   let r = Body.to_sdl_rect ~offset:c.offset body in
   Sdlvideo.fill_rect ~rect:r c.surface color

@@ -8,6 +8,10 @@ type 'a t = {
   cols : int;
 }
 
+let get i j g =
+  let k = i * g.cols + j in
+  Array.get g.array k
+
 let of_lists xss =
   let cols = match List.hd xss with
     | None -> 0
