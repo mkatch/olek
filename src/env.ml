@@ -1,3 +1,4 @@
-type t = unit
-
-let dummy = ()
+type t = {
+  t : float;
+  dt : float;
+}

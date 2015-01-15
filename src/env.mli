@@ -1,3 +1,4 @@
-type t
-
-val dummy : t
+type t = {
+  t : float;
+  dt : float;
+}

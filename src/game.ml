@@ -10,6 +10,6 @@ let main () =
         loop 1 c state
       end else
         loop (f + 1) t state
-  in loop 1 (Unix.time ()) (Engine.init ())
+  in loop 1 (Unix.time ()) (Engine.init ~w:800 ~h:600 ~fps:30)
 
 let () = main ()
