@@ -7,13 +7,13 @@ type vector = {
 
 let make x y = {x; y}
 
-let of_pair (x, y) = {x; y}
+let of_floats (x, y) = {x; y}
 
-let of_int_pair (x, y) = {x = Float.of_int x; y = Float.of_int y}
+let of_ints (x, y) = {x = Float.of_int x; y = Float.of_int y}
 
-let to_pair {x; y} = (x, y)
+let to_floats {x; y} = (x, y)
 
-let to_int_pair {x; y} = (Float.to_int x, Float.to_int y)
+let to_ints {x; y} = (Float.to_int x, Float.to_int y)
 
 let nil = {x = 0.; y = 0.}
 

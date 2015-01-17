@@ -4,20 +4,25 @@ open Mind
 open Sdlkey
 open Env
 
-type state = unit
+type state = {
+  dir : bool
+}
+
+
 type msg = unit
 
 let msg_from_int n = ()
 let msg_to_int () = 0
 
+let run_right_sheet = Sprite.make_sheet ~image:"olek_run_right"
+                                        ~frames:8 ~dt:60
+let run_left_sheet  = Sprite.make_sheet ~image:"olek_run_left"
+                                        ~frames:8 ~dt:60
+
 let init body =
-  let body = Body.{ body with
-      w = 50;
-      h = 50;
-      color = Sdlvideo.blue;
-    } in
-  let mind = () in
-  Command.just_return body mind
+  let body = body |> Body.set_dims 50 50 |> Body.set_sprite run_right_sheet in
+  let state = { dir = false } in
+  Command.just_return body state
 
 let think body state env =
   let incr_of_key_state k = if is_key_pressed k then 5. else 0. in
@@ -26,11 +31,14 @@ let think body state env =
   let dr = incr_of_key_state KEY_RIGHT in
   let dd = incr_of_key_state KEY_DOWN in
   let dp = make_v (dr -. dl) (dd -. du) in
-  let tile = Env.tile_at body.Body.pos env in
-  let color = if tile = Room.Void then Sdlvideo.black else Sdlvideo.white in
-  let body = Body.move_by body dp in
-  let body = Body.{ body with color } in
-  Command.just_return body state
+  let body = Body.move_by dp body in
+  let dir = dp.x > 0. in
+  let body =
+    if dir = state.dir then body
+    else
+      let sheet = if dir then run_right_sheet else run_left_sheet in
+      Body.set_sprite sheet body in 
+  Command.just_return body { state with dir }
 
 let react body state event env =
   Command.just_return body state

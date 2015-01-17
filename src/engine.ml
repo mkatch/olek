@@ -71,6 +71,10 @@ let update_time state =
   let new_time = { time with frame = time.frame + 1; t_ms = new_t_ms } in
   { state with time = new_time }
 
+let advance_sprites state =
+  let bodies = List.map ~f:(Body.advance_sprite state.time.t_ms) state.bodies in
+  { state with bodies }
+
 let process_event state event =
   match event with
   | QUIT
@@ -102,11 +106,12 @@ let focus = function
   | Some state ->
     let c = state.canvas in
     let b = List.hd_exn state.bodies in
-    Some { state with canvas = Canvas.focus b.Body.pos c }
+    Some { state with canvas = Canvas.focus (Body.pos b) c }
 
 let iter state =
   draw state;
   let state = update_time state in
+  let state = advance_sprites state in
   let state, obj_events = process_events state in
   let state = process_obj_events obj_events state in
   let state = think state in
