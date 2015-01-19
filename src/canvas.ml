@@ -4,12 +4,18 @@ open Utils
 type t = {
   surface : Sdlvideo.surface;
   offset : vector;
+  font : Sdlttf.font;
 }
 
-let init ~w ~h = {
-  surface = Sdlvideo.set_video_mode ~w:800 ~h:600 [];
-  offset = Vector.nil;
-}
+let init ~w ~h =
+  let font_filename = filename_concat ["data"; "fonts"; "input.ttf"] in
+  {
+    surface = Sdlvideo.set_video_mode ~w:800 ~h:600 [];
+    offset = Vector.nil;
+    font = Sdlttf.open_font font_filename 14;
+  }
+
+let set_font c font = { c with font }
 
 let dims c = let (w, h, _) = Sdlvideo.surface_dims c.surface in (w, h)
 
@@ -86,3 +92,12 @@ let draw_body c body =
   Sdlvideo.blit_surface ~src:src_surface ~src_rect:src_rect
                         ~dst:c.surface   ~dst_rect:dst_rect ();
   put_rect c.surface bbox bbox_color
+
+let draw_terminal c terminal =
+  let pos = Terminal.pos terminal in
+  let text = Terminal.text terminal in
+  let length = String.length text in
+  let text = String.prefix text pos ^ "|" ^ String.suffix text (length - pos) in
+  let rendered_text = Sdlttf.render_text_shaded c.font ~fg:Sdlvideo.white
+                      ~bg:Sdlvideo.black text in
+  Sdlvideo.blit_surface ~src:rendered_text ~dst:c.surface ()
