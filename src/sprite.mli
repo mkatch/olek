@@ -1,19 +1,24 @@
 type sheet
 
-type instance
+type t
 
 val dummy_sheet : sheet
 
-val dummy_instance : instance
+val dummy : t
 
-val make_sheet : image:string -> frames:int -> dt:int -> sheet
+val make_sheet : image:string -> frames:int -> dt:int -> origin:int * int
+  -> sheet
 
-val make_instance : sheet -> instance
+val make: sheet -> t
+
+val sheet : t -> sheet
 
 val sheet_dims : sheet -> int * int
 
-val dims : instance -> int * int
+val frame_dims : sheet -> int * int
 
-val advance : int -> instance -> instance
+val origin : sheet -> int * int
 
-val blit_data : instance -> Sdlvideo.surface * Sdlvideo.rect
+val advance : int -> t -> t
+
+val blit_data : t -> Sdlvideo.surface * Sdlvideo.rect

@@ -1,3 +1,5 @@
+open Core.Std
+
 type t = {
   l : float;
   t : float;
@@ -7,9 +9,26 @@ type t = {
 
 let make l t r b = {l; t; r; b}
 
-let width rect = rect.r -. rect.l
+let l rect = rect.l
 
-let height rect = rect.b -. rect.t
+let t rect = rect.t
+
+let r rect = rect.r
+
+let b rect = rect.b
+
+let w rect = rect.r -. rect.l
+
+let h rect = rect.b -. rect.t
+
+let coords { l; t; r; b; } = (l, t, r, b)
+
+let int_coords { l; t; r; b; } = (
+  Float.to_int l,
+  Float.to_int t,
+  Float.to_int r,
+  Float.to_int b
+)
 
 (*
 let to_sdl_rect {l; t; r; b} = Sdlvideo.{

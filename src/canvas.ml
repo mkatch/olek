@@ -25,6 +25,31 @@ let focus center c =
 
 let flip c = Sdlvideo.flip c.surface
 
+let put_horizontal_line surface ~y ~x_beg ~x_end color =
+  let w, h, _ = Sdlvideo.surface_dims surface in
+  if between ~min:0 ~max:(h - 1) y then
+  let x_beg = clamp ~min:0 ~max:(w - 1) x_beg in
+  let x_end = clamp ~min:0 ~max:(w - 1) x_end in
+  for x = x_beg to x_end do
+    Sdlvideo.put_pixel surface ~x:x ~y:y color
+  done
+
+let put_vertical_line surface ~x ~y_beg ~y_end color =
+  let w, h, _ = Sdlvideo.surface_dims surface in
+  if between ~min:0 ~max:(w - 1) x then
+  let y_beg = clamp ~min:0 ~max:(h - 1) y_beg in
+  let y_end = clamp ~min:0 ~max:(h - 1) y_end in
+  for y = y_beg to y_end do
+    Sdlvideo.put_pixel surface ~x:x ~y:y color
+  done
+
+let put_rect surface rect color =
+  let x0, y0, x1, y1 = Rect.int_coords rect in
+  put_horizontal_line surface y0 x0 x1 color;
+  put_horizontal_line surface y1 x0 x1 color;
+  put_vertical_line   surface x0 y0 y1 color;
+  put_vertical_line   surface x1 y0 y1 color
+
 let draw_uniform_layer c color =
   let open Sdlvideo in
   let ic = map_RGB c.surface color
@@ -58,5 +83,8 @@ let draw_room c room =
 let draw_body c body =
   let src_surface, src_rect = Sprite.blit_data (Body.sprite body) in
   let dst_rect = Body.sprite_dst_sdl_rect ~offset:c.offset body in
+  let bbox_color = Sdlvideo.map_RGB c.surface Sdlvideo.red in
+  let bbox = Body.bounding_box ~offset:c.offset body in
   Sdlvideo.blit_surface ~src:src_surface ~src_rect:src_rect
-                        ~dst:c.surface   ~dst_rect:dst_rect ()
+                        ~dst:c.surface   ~dst_rect:dst_rect ();
+  put_rect c.surface bbox bbox_color

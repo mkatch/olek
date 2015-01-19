@@ -14,10 +14,10 @@ type msg = unit
 let msg_from_int n = ()
 let msg_to_int () = 0
 
-let run_right_sheet = Sprite.make_sheet ~image:"olek_run_right"
-                                        ~frames:8 ~dt:60
-let run_left_sheet  = Sprite.make_sheet ~image:"olek_run_left"
-                                        ~frames:8 ~dt:60
+let run_right_sheet =
+  Sprite.make_sheet ~image:"olek_run_right" ~frames:8 ~dt:60 ~origin:(0, 0)
+let run_left_sheet =
+  Sprite.make_sheet ~image:"olek_run_left"  ~frames:8 ~dt:60 ~origin:(0, 0)
 
 let init body =
   let body = body |> Body.set_dims 50 50 |> Body.set_sprite run_right_sheet in

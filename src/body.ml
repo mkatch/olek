@@ -5,14 +5,12 @@ type t = {
   pos : vector;
   w : int;
   h : int;
-  sprite : Sprite.instance;
-  sprite_offset : vector;
+  sprite : Sprite.t;
 }
 
 let make pos w h = {
   pos; w; h;
-  sprite = Sprite.dummy_instance;
-  sprite_offset = Vector.nil
+  sprite = Sprite.dummy;
 }
 
 let w body = body.w
@@ -35,29 +33,22 @@ let move_by dpos body = { body with pos = body.pos +^ dpos }
 
 let sprite body = body.sprite
 
-let set_sprite sheet ?offset:(offset = Vector.nil) body =
-  { body with
-    sprite = Sprite.make_instance sheet;
-    sprite_offset = offset }
+let set_sprite sheet body = { body with sprite = Sprite.make sheet; }
 
 let advance_sprite t body = { body with sprite = Sprite.advance t body.sprite }
-(*
-let rect {pos; w; h} = let open Vector in
-  let w = Float.of_int w in
-  let h = Float.of_int h in
-  let l = pos.x -. 0.5 *. w in
-  let t = pos.y -. 0.5 *. h
-  in Rect.{
-    l = l; t = t;
-    r = l +. w; b = t +. h
-  }
-*)
+
+let bounding_box ?offset:(offset = Vector.nil) body =
+  let w = Float.of_int body.w in
+  let h = Float.of_int body.h in
+  let l, t = Vector.to_floats (body.pos -^ offset) in
+  Rect.make l t (l +. w) (t +. h)
+
 let sdl_rect ?offset:(offset = Vector.nil) body =
   let (x, y) = Vector.to_ints (body.pos -^ offset) in
   Sdlvideo.rect ~x:(x - body.w / 2) ~y:(y - body.h / 2)
                 ~w:body.w           ~h:body.h
 
 let sprite_dst_sdl_rect ?offset:(offset = Vector.nil) body =
-  let x, y = Vector.to_ints (body.pos -^ offset +^ body.sprite_offset) in
-  let x = x - body.w / 2 and y = y - body.h / 2 in
-  Sdlvideo.rect x y 0 0 (* Width and height are unimportant *)
+  let (x, y) = Vector.to_ints (body.pos -^ offset) in
+  let (cx, cy) = Sprite.origin (Sprite.sheet body.sprite) in
+  Sdlvideo.rect (x - cx) (y - cy) 0 0 (* Width and height are unimportant *)
