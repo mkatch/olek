@@ -17,6 +17,8 @@ val focus : vector -> t -> t
 
 val flip : t -> unit
 
+val clear : t -> Sdlvideo.color -> unit
+
 val draw_room : t -> Room.t -> unit
 
 val draw_body : t -> Body.t -> unit

@@ -25,6 +25,11 @@ let focus center c =
 
 let flip c = Sdlvideo.flip c.surface
 
+let clear c color =
+  let open Sdlvideo in 
+  let ic = map_RGB c.surface color
+  in fill_rect c.surface ic
+
 let put_horizontal_line surface ~y ~x_beg ~x_end color =
   let w, h, _ = Sdlvideo.surface_dims surface in
   if between ~min:0 ~max:(h - 1) y then

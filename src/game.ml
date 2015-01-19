@@ -75,8 +75,7 @@ let advance_sprites state =
   let bodies = List.map ~f:(Body.advance_sprite state.time.t_ms) state.bodies in
   { state with bodies }
 
-let process_event state event =
-  match event with
+let process_event state = function
   | QUIT
   | KEYDOWN {keysym = KEY_ESCAPE} -> None
   | _ -> Some state
