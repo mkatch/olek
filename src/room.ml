@@ -8,8 +8,7 @@ type tile =
   | Sticky
 
 type tileset = {
-  image : Sdlvideo.surface;
-  tile_size : int;
+  surface : Sdlvideo.surface;
   rows : int;
   cols : int;
 }
@@ -22,6 +21,31 @@ type t = {
   tiles : tile Grid.t;
   layers : layer list;
 }
+
+let tile_size = 16
+
+let tiles room = room.tiles
+
+let layers room = room.layers
+
+let surface tileset = tileset.surface
+
+let tileset_src_rect tileset k =
+  let i = k / tileset.cols in
+  let j = k mod tileset.cols in
+  Sdlvideo.rect ~x:(j * tile_size) ~y:(i * tile_size) ~w:tile_size ~h:tile_size
+
+let load_tileset name =
+  let filename = filename_concat ["data"; "tilesets"; name ^ ".png"] in
+  try
+    let surface = Sdlloader.load_image filename in
+    let w, h, _ = Sdlvideo.surface_dims surface in
+    {
+      surface = surface;
+      rows = h / tile_size;
+      cols = w / tile_size;
+    }
+  with Sdlloader.SDLloader_exception e -> failwith ("Room.make_tileset: " ^ e)
 
 let tile_of_char = function
   | '#' -> Solid
@@ -39,7 +63,6 @@ let input_tiles inch =
   let rows = aux [] in
   Printf.printf "rows: %d\n" (List.length rows);
   Grid.of_lists rows
-
 
 let input_uniform_layer inch =
   let color = In_channel.input_line inch
@@ -61,20 +84,8 @@ let input_layers inch =
                        "'") in
   aux []
 
-
-let make_tileset ~image_file ~tile_size =
-  try
-    let image = Sdlloader.load_image image_file in
-    let w, h, _ = Sdlvideo.surface_dims image
-    in {
-      image = image;
-      tile_size = tile_size;
-      rows = h / tile_size;
-      cols = w / tile_size;
-    }
-  with Sdlloader.SDLloader_exception e -> failwith ("make_tileset: " ^ e) 
-
-let of_file filename =
+let load name =
+  let filename = filename_concat ["data"; "rooms"; name ^ ".orm"] in
   let file = In_channel.create filename in
   let tiles = input_tiles file in
   let layers = input_layers file in
@@ -86,7 +97,7 @@ let make_tiles_layer tiles =
     | Solid -> 2
     | TopSolid -> 4
     | Sticky -> 5 in
-  let tileset = make_tileset ~image_file:"data/tiles.png" ~tile_size:16 in
+  let tileset = load_tileset "tiles" in
   let grid = Grid.map ~f:aux tiles in
   Tiled (tileset, grid)
 

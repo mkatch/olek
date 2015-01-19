@@ -31,7 +31,7 @@ let init ~w ~h ~fps =
   let canvas = Canvas.init ~w:w ~h:h in
   let objs = make_objs 1 Minds.dummy in
   let bodies, minds = List.unzip objs in
-  let room = Room.of_file "data/room.orm" in
+  let room = Room.load "room" in
   let room = Room.add_tiles_layer room in
   let time = { 
     frame = 0;
@@ -52,7 +52,7 @@ let env_of_state state =
   Env.{
     t = Float.of_int (time.frame * time.dt_ms) /. 1000.;
     dt = Float.of_int time.dt_ms /. 1000.;
-    tiles = state.room.Room.tiles;
+    tiles = Room.tiles state.room;
   }
 
 let draw state =

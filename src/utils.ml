@@ -26,3 +26,8 @@ let clamp ~min ~max x =
   if x <= min then min else
   if x >= max then max
   else x
+
+let filename_concat = function
+  | [] -> ""
+  | [f] -> f
+  | f :: fs -> List.fold fs ~init:f ~f:Filename.concat

@@ -56,21 +56,14 @@ let draw_uniform_layer c color =
   in fill_rect c.surface ic
 
 let draw_tiled_layer c tileset grid =
-  let open Sdlvideo in
-  let open Room in
-  let s = tileset.tile_size in
+  let src_surface = Room.surface tileset in
+  let s = Room.tile_size in
   let (ox, oy) = Vector.to_ints c.offset in
-  let draw_tile i j k = if k > 0 then
-    let src_rect = {
-      r_x = ((k - 1) mod tileset.cols) * s; r_y = (k - 1) / tileset.cols * s;
-      r_w = s; r_h = s; 
-    } in
-    let dst_rect = {
-      r_x = j * s - ox; r_y = i * s - oy;
-      r_w = s; r_h = s
-    }
-    in blit_surface ~src:tileset.image ~src_rect:src_rect
-                    ~dst:c.surface     ~dst_rect:dst_rect () in
+  let draw_tile i j k = if k >= 0 then
+    let src_rect = Room.tileset_src_rect tileset k in
+    let dst_rect = Sdlvideo.rect ~x:(j * s - ox) ~y:(i * s - oy) ~w:0 ~h:0 in
+    Sdlvideo.blit_surface ~src:src_surface ~src_rect:src_rect
+                          ~dst:c.surface   ~dst_rect:dst_rect () in
   Grid.iteri ~f:draw_tile grid
 
 let draw_room_layer c = function
@@ -78,7 +71,7 @@ let draw_room_layer c = function
   | Room.Tiled (tileset, grid) -> draw_tiled_layer c tileset grid
 
 let draw_room c room =
-  List.iter ~f:(draw_room_layer c) room.Room.layers
+  List.iter ~f:(draw_room_layer c) (Room.layers room)
 
 let draw_body c body =
   let src_surface, src_rect = Sprite.blit_data (Body.sprite body) in
