@@ -2,18 +2,18 @@
 
 #source ~/.bash_profile
 
-set -e
+#set -e
 
 make ()
 {
   if [ -e $1 ]; then
     mv $1 $1.native
   fi
-  OCAMLBUILD_FLAGS="-use-ocamlfind"
-  if [[ `uname` == "OS X" ]]; then
-    OCAMLBUILD_FLAGS="$OCAMLBUILD_FLAGS:-lflag -cclib -lflag \"-framework Cocoa\""
+  if [[ `uname` == "Darwin" ]]; then
+    ocamlbuild -use-ocamlfind -lflag -cclib -lflag "-framework Cocoa" $1.native
+  else
+    ocamlbuild -use-ocamlfind $1.native
   fi
-  ocamlbuild $OCAMLBUILD_FLAGS $1.native
   mv $1.native $1
 }
 
