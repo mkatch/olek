@@ -16,9 +16,15 @@ type layer =
 
 val tile_size : int
 
+val make : int -> int -> t
+
 val tiles : t -> tile Grid.t
 
 val layers : t -> layer list
+
+val add_layer : layer -> ?i:int -> t -> t
+
+val move_layer : src:int -> dst:int -> t -> t
 
 val surface : tileset -> Sdlvideo.surface
 

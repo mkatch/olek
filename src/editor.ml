@@ -6,6 +6,7 @@ open Sdlkey
 type state = {
   canvas : Canvas.t;
   terminal : Terminal.t;
+  room : Room.t;
   redraw : bool;
   terminal_focus : bool;
 }
@@ -22,6 +23,7 @@ let init () =
   {
     canvas = canvas;
     terminal = Terminal.empty;
+    room = Room.add_layer (Room.Uniform Sdlvideo.red) (Room.make 16 16);
     redraw = true;
     terminal_focus = false;
   }
@@ -50,6 +52,7 @@ let rec process_events state =
 let draw state = if state.redraw then
   let c = state.canvas in
   Canvas.clear c Sdlvideo.blue;
+  Canvas.draw_room c state.room;
   Canvas.draw_terminal c state.terminal;
   Canvas.flip c
 

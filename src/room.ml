@@ -24,9 +24,27 @@ type t = {
 
 let tile_size = 16
 
+let make rows cols =
+  {
+    tiles = Grid.make Void rows cols;
+    layers = [];
+  }
+
 let tiles room = room.tiles
 
 let layers room = room.layers
+
+let add_layer layer ?i:(i = 1) room =
+  { room with layers = list_insert layer (i - 1) room.layers }
+
+let move_layer ~src ~dst room =
+  match List.nth room.layers src with
+  | None -> room
+  | Some layer ->
+    let layers = room.layers
+      |> list_rem src
+      |> list_insert layer dst in
+    { room with layers }  
 
 let surface tileset = tileset.surface
 

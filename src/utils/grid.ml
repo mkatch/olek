@@ -8,9 +8,15 @@ type 'a t = {
   cols : int;
 }
 
-let get i j g =
-  let k = i * g.cols + j in
-  Array.get g.array k
+let make x rows cols =
+  let array = Array.init (rows * cols) ~f:(fun _ -> x) in
+  { array; rows; cols; }
+
+let ind i j g = i * g.cols + j
+
+let get i j g = Array.get g.array (ind i j g)
+
+let set i j x g = Array.set g.array (ind i j g) x; g 
 
 let of_lists xss =
   let cols = match List.hd xss with
