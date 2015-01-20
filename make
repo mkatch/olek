@@ -1,9 +1,5 @@
 #!/bin/bash
 
-#source ~/.bash_profile
-
-#set -e
-
 make ()
 {
   if [ -e $1 ]; then

@@ -5,8 +5,9 @@ exception Empty
 type 'a t = {
   array : 'a Array.t;
   rows : int;
-  cols : int;
+  cols : int
 }
+with sexp
 
 let make x rows cols =
   let array = Array.init (rows * cols) ~f:(fun _ -> x) in

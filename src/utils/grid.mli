@@ -1,7 +1,4 @@
-open Sexplib
-open Sexp
-
-type 'a t
+type 'a t with sexp
 
 val make : 'a -> int -> int -> 'a t
 
