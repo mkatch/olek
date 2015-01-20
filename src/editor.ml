@@ -23,7 +23,7 @@ let init () =
   {
     canvas = canvas;
     terminal = Terminal.empty;
-    room = Room.add_layer (Room.Uniform Sdlvideo.red) (Room.make 16 16);
+    room = Room.add_layer (Room.Uniform (255, 255, 0)) (Room.make 16 16);
     redraw = true;
     terminal_focus = false;
   }
@@ -63,6 +63,8 @@ let main () =
     | Some state ->
       draw state;
       loop { state with redraw = false } in
+  let state = init () in
+  Printf.printf "%s" (Sexp.to_string (Room.sexp_of_t state.room));
   loop (init ())
 
 let () = main ()

@@ -1,38 +1,56 @@
 open Core.Std
 open Utils
 
-type tile =
-  | Void
-  | Solid
-  | TopSolid
-  | Sticky
-
 type tileset = {
   surface : Sdlvideo.surface;
   rows : int;
   cols : int;
+  name : string;
 }
+
+let load_tileset name =
+  let filename = filename_concat ["data"; "tilesets"; name ^ ".png"] in
+  try
+    let surface = Sdlloader.load_image filename in
+    let w, h, _ = Sdlvideo.surface_dims surface in
+    {
+      surface = surface;
+      rows = h / Tile.size;
+      cols = w / Tile.size;
+      name = name;
+    }
+  with Sdlloader.SDLloader_exception e -> failwith ("Room.load_tileset: " ^ e)
+
+let sexp_of_tileset tileset = sexp_of_string tileset.name 
+
+let tileset_of_sexp sexp =
+  let name = string_of_sexp sexp in
+  load_tileset tileset_s.name_s
 
 type layer =
   | Uniform of Sdlvideo.color
-  | Tiled of tileset * int Grid.t
+  | Tiled of int Grid.t
+with sexp
 
 type t = {
-  tiles : tile Grid.t;
+  tiles : Tile.t Grid.t;
   layers : layer list;
+  tileset : tileset;
 }
-
-let tile_size = 16
+with sexp
 
 let make rows cols =
   {
-    tiles = Grid.make Void rows cols;
+    tiles = Grid.make Tile.Void rows cols;
     layers = [];
+    tileset = load_tileset "dummy";
   }
 
 let tiles room = room.tiles
 
 let layers room = room.layers
+
+let tileset room = room.tileset
 
 let add_layer layer ?i:(i = 1) room =
   { room with layers = list_insert layer (i - 1) room.layers }
@@ -46,42 +64,26 @@ let move_layer ~src ~dst room =
       |> list_insert layer dst in
     { room with layers }  
 
+let set_tileset name room = { room with tileset = load_tileset name }
+
 let surface tileset = tileset.surface
 
 let tileset_src_rect tileset k =
   let i = k / tileset.cols in
   let j = k mod tileset.cols in
-  Sdlvideo.rect ~x:(j * tile_size) ~y:(i * tile_size) ~w:tile_size ~h:tile_size
-
-let load_tileset name =
-  let filename = filename_concat ["data"; "tilesets"; name ^ ".png"] in
-  try
-    let surface = Sdlloader.load_image filename in
-    let w, h, _ = Sdlvideo.surface_dims surface in
-    {
-      surface = surface;
-      rows = h / tile_size;
-      cols = w / tile_size;
-    }
-  with Sdlloader.SDLloader_exception e -> failwith ("Room.make_tileset: " ^ e)
-
-let tile_of_char = function
-  | '#' -> Solid
-  | '^' -> TopSolid
-  | 'X' -> Sticky
-  |  _  -> Void
+  Sdlvideo.rect ~x:(j * Tile.size) ~y:(i * Tile.size) ~w:Tile.size ~h:Tile.size
 
 let input_tiles inch =
   let rec aux rrows =
     let line = Option.value_exn (In_channel.input_line inch) in
     if String.is_empty line then List.rev rrows
     else
-      let row = List.map ~f:tile_of_char (String.to_list line) in
+      let row = List.map ~f:(fun _ -> Tile.Void) (String.to_list line) in
       aux (row :: rrows) in
   let rows = aux [] in
   Printf.printf "rows: %d\n" (List.length rows);
   Grid.of_lists rows
-
+(*
 let input_uniform_layer inch =
   let color = In_channel.input_line inch
     |> option_value_exn
@@ -101,23 +103,22 @@ let input_layers inch =
       | _ -> failwith ("Room.input_layers: Unknown layer code '" ^ layer_code ^
                        "'") in
   aux []
-
+*)
 let load name =
   let filename = filename_concat ["data"; "rooms"; name ^ ".orm"] in
   let file = In_channel.create filename in
   let tiles = input_tiles file in
-  let layers = input_layers file in
-  { tiles; layers }
+  let layers = [] in
+  { tiles; layers; tileset = (load_tileset "dummy") }
 
 let make_tiles_layer tiles =
   let aux = function
-    | Void -> 0
-    | Solid -> 2
-    | TopSolid -> 4
-    | Sticky -> 5 in
-  let tileset = load_tileset "tiles" in
+    | Tile.Void -> 0
+    | Tile.Solid -> 2
+    | Tile.TopSolid -> 4
+    | Tile.Sticky -> 5 in
   let grid = Grid.map ~f:aux tiles in
-  Tiled (tileset, grid)
+  Tiled grid
 
 let add_tiles_layer room =
   let tl = make_tiles_layer room.tiles in

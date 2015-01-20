@@ -37,3 +37,14 @@ let list_rem i xs = List.filteri ~f:(fun j _ -> j <> i) xs
 let list_insert x i xs =
   let h, t = List.split_n xs i in
   h @ (x :: t)
+
+module Sdlvideo =
+struct
+  include Sdlvideo
+
+  type int_triple = int * int * int with sexp
+
+  let color_of_sexp = int_triple_of_sexp
+
+  let sexp_of_color = sexp_of_int_triple
+end

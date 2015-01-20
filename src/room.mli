@@ -1,30 +1,26 @@
 open Utils
 
-type t
-
-type tile =
-  | Void
-  | Solid
-  | TopSolid
-  | Sticky
+type t with sexp
 
 type tileset
 
 type layer =
   | Uniform of Sdlvideo.color
-  | Tiled of tileset * int Grid.t
-
-val tile_size : int
+  | Tiled of int Grid.t
 
 val make : int -> int -> t
 
-val tiles : t -> tile Grid.t
+val tiles : t -> Tile.t Grid.t
 
 val layers : t -> layer list
+
+val tileset : t -> tileset
 
 val add_layer : layer -> ?i:int -> t -> t
 
 val move_layer : src:int -> dst:int -> t -> t
+
+val set_tileset : string -> t -> t
 
 val surface : tileset -> Sdlvideo.surface
 

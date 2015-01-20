@@ -68,7 +68,7 @@ let draw_uniform_layer c color =
 
 let draw_tiled_layer c tileset grid =
   let src_surface = Room.surface tileset in
-  let s = Room.tile_size in
+  let s = Tile.size in
   let (ox, oy) = Vector.to_ints c.offset in
   let draw_tile i j k = if k >= 0 then
     let src_rect = Room.tileset_src_rect tileset k in
@@ -77,12 +77,12 @@ let draw_tiled_layer c tileset grid =
                           ~dst:c.surface   ~dst_rect:dst_rect () in
   Grid.iteri ~f:draw_tile grid
 
-let draw_room_layer c = function
-  | Room.Uniform color -> draw_uniform_layer c color
-  | Room.Tiled (tileset, grid) -> draw_tiled_layer c tileset grid
+let draw_room_layer c tileset = function
+  | Room.Uniform (r, g, b) -> draw_uniform_layer c (r, g, b)
+  | Room.Tiled grid -> draw_tiled_layer c tileset grid
 
 let draw_room c room =
-  List.iter ~f:(draw_room_layer c) (Room.layers room)
+  List.iter ~f:(draw_room_layer c (Room.tileset room)) (Room.layers room)
 
 let draw_body c body =
   let src_surface, src_rect = Sprite.blit_data (Body.sprite body) in
