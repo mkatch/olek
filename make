@@ -1,37 +1,28 @@
 #!/bin/bash
 
-source ~/.bash_profile
+#source ~/.bash_profile
 
 set -e
 
-make_game ()
+make ()
 {
-  if [ -e game ]; then
-    mv game game.native
+  if [ -e $1 ]; then
+    mv $1 $1.native
   fi
-  ocamlbuild -use-ocamlfind -lflag -cclib -lflag "-framework Cocoa" game.native
-  mv game.native game
+  OCAMLBUILD_FLAGS="-use-ocamlfind"
+  if [[ `uname` == "OS X" ]]; then
+    OCAMLBUILD_FLAGS="$OCAMLBUILD_FLAGS:-lflag -cclib -lflag \"-framework Cocoa\""
+  fi
+  ocamlbuild $OCAMLBUILD_FLAGS $1.native
+  mv $1.native $1
 }
 
-make_editor ()
-{
-	if [ -e editor ]; then
-		mv editor editor.native
-	fi
-	ocamlbuild -use-ocamlfind -lflag -cclib -lflag "-framework Cocoa" editor.native
-	mv editor.native editor
-}
-
-if [ $# -eq 0 ]; then
-  make_game
-else
-  while [ $# -gt 0 ]; do
-    case $1 in
-      game)   make_game;;
-			editor) make_editor;;
-      clean)  ocamlbuild -clean;;
-      *)      echo "Unknown action $1";;
-    esac;
-    shift
-  done
-fi
+while [ $# -gt 0 ]; do
+  case $1 in
+    game)   make "game";;
+    editor) make "editor";;
+    clean)  ocamlbuild -clean;;
+    *)      echo "Unknown action $1";;
+  esac;
+  shift
+done

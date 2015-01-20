@@ -28,6 +28,7 @@ let rec make_objs n mind =
 
 let init ~w ~h ~fps =
   Sdl.init [`VIDEO];
+  Sdlttf.init ();
   let canvas = Canvas.init ~w:w ~h:h in
   let objs = make_objs 1 Minds.dummy in
   let bodies, minds = List.unzip objs in
@@ -49,11 +50,10 @@ let quit () = Sdl.quit ()
 
 let env_of_state state =
   let time = state.time in
-  Env.{
-    t = Float.of_int (time.frame * time.dt_ms) /. 1000.;
-    dt = Float.of_int time.dt_ms /. 1000.;
-    tiles = Room.tiles state.room;
-  }
+  Env.make
+    ~t:(Float.of_int (time.frame * time.dt_ms) /. 1000.)
+    ~dt:(Float.of_int time.dt_ms /. 1000.)
+    ~tiles:(Room.tiles state.room)
 
 let draw state =
   let c = state.canvas in
