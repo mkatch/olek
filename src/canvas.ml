@@ -92,7 +92,7 @@ let draw_body c body =
   Sdlvideo.blit_surface ~src:src_surface ~src_rect:src_rect
                         ~dst:c.surface   ~dst_rect:dst_rect ();
   put_rect c.surface bbox bbox_color
-
+(*
 let draw_terminal c terminal =
   let pos = Terminal.pos terminal in
   let text = Terminal.text terminal in
@@ -101,3 +101,4 @@ let draw_terminal c terminal =
   let rendered_text = Sdlttf.render_text_shaded c.font ~fg:Sdlvideo.white
                       ~bg:Sdlvideo.black text in
   Sdlvideo.blit_surface ~src:rendered_text ~dst:c.surface ()
+*)

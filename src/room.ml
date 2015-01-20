@@ -23,9 +23,7 @@ let load_tileset name =
 
 let sexp_of_tileset tileset = sexp_of_string tileset.name 
 
-let tileset_of_sexp sexp =
-  let name = string_of_sexp sexp in
-  load_tileset tileset_s.name_s
+let tileset_of_sexp sexp = load_tileset (string_of_sexp sexp)
 
 type layer =
   | Uniform of Sdlvideo.color
