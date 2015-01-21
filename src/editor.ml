@@ -4,8 +4,8 @@ open Sdlevent
 open Sdlkey
 
 type state = {
-  canvas : Canvas.t;
   room : Room.t;
+  view : View.t;
 }
 
 let window_width = 800
@@ -13,22 +13,22 @@ let window_height = 600
 
 let init () =
   Sdl.init [`VIDEO];
+  Sdlttf.init ();
+  Canvas.init ~w:window_width ~h:window_height;
   Sdlkey.enable_unicode true;
   Sdlkey.enable_key_repeat ();
-  Sdlttf.init ();
-  let canvas = Canvas.init ~w:window_width ~h:window_height in
   {
-    canvas = canvas;
-    room = Room.add_layer (Room.Uniform (255, 255, 0)) (Room.make 16 16);
+    view = View.make Vector.nil;
+    room = Room.add_layer (Room.Uniform Sdlvideo.blue) (Room.make 16 16);
   }
 
 let quit () = Sdl.quit ()
 
 let draw state =
-  let c = state.canvas in
-  Canvas.clear c Sdlvideo.blue;
-  Canvas.draw_room c state.room;
-  Canvas.flip c
+  let view = state.view in
+  Canvas.clear Sdlvideo.blue;
+  Canvas.draw_room view state.room;
+  Canvas.flip ()
 
 let rec loop ?redraw:(redraw = true) state =
   if redraw then draw state;

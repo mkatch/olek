@@ -1,24 +1,24 @@
 open Core.Std
 open Utils
 
-type t
+val init : w:int -> h:int -> unit
 
-val init : w:int -> h:int -> t
+val dims : unit -> int * int
 
-val dims : t -> int * int
+val flip : unit -> unit
 
-val to_world : t -> vector -> vector
+val clear : Sdlvideo.color -> unit
 
-val to_canvas : t -> vector -> vector
+val screenshot : unit -> Sdlvideo.surface
 
-val center : t -> vector
+val blit : ?x:int -> ?y:int -> ?src_rect:Sdlvideo.rect -> Sdlvideo.surface
+  -> unit
 
-val focus : vector -> t -> t
+val draw_filled_rect : Sdlvideo.rect -> Sdlvideo.color -> unit
 
-val flip : t -> unit
+val draw_text : int -> int -> ?fg:Sdlvideo.color -> ?bg:Sdlvideo.color -> string
+  -> unit
 
-val clear : t -> Sdlvideo.color -> unit
+val draw_room : View.t -> Room.t -> unit
 
-val draw_room : t -> Room.t -> unit
-
-val draw_body : t -> Body.t -> unit
+val draw_body : View.t -> Body.t -> unit

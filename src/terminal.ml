@@ -2,10 +2,14 @@ open Core.Std
 open Sdlevent
 open Sdlkey
 
+let ta_h = 28
+let marg = 5
+
 type state = {
   prompt : string;
   text : string;
-  pos : int
+  pos : int;
+  screenshot : Sdlvideo.surface;
 }
 
 let draw state =
@@ -13,7 +17,12 @@ let draw state =
   let pos = state.pos in
   let length = String.length text in
   let text = String.prefix text pos ^ "|" ^ String.suffix text (length - pos) in
-  Printf.printf "%s %s\n" state.prompt text; flush_all ()
+  let w, h = Canvas.dims () in
+  Canvas.blit state.screenshot;
+  Canvas.draw_filled_rect (Sdlvideo.rect 0 (h - ta_h) w ta_h) Sdlvideo.black;
+  Canvas.draw_text marg (h - ta_h + marg) ~fg:Sdlvideo.white ~bg:Sdlvideo.black
+    (state.prompt ^ " " ^ text);
+  Canvas.flip ()
 
 let rec loop ?redraw:(redraw = true) state =
   if redraw then draw state;
@@ -43,5 +52,6 @@ let read ?prompt:(prompt = "> ") () =
     prompt = prompt;
     text = "";
     pos = 0;
+    screenshot = Canvas.screenshot ()
   } in
   loop state
