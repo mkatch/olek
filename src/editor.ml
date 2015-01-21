@@ -44,6 +44,14 @@ let move_active_tileset_tile di dj state =
   let j = clamp ~min:0 ~max:(Tileset.column_cnt - 1) j in
   { state with active_tileset_tile = i * Tileset.column_cnt + j }
 
+let set_tileset_re = Str.regexp " *set *tileset *\\([a-z]+\\) *$"
+let process_terminal_command text state =
+  if Str.string_match set_tileset_re text 0 then
+    let name = Str.matched_group 1 text in
+    { state with room = Room.set_tileset name state.room }
+  else
+    state
+
 let rec loop ?redraw:(redraw = true) state =
   if redraw then draw state;
   match wait_event () with
@@ -51,8 +59,8 @@ let rec loop ?redraw:(redraw = true) state =
   | KEYDOWN { keysym = KEY_ESCAPE } -> exit 0
   | KEYDOWN { keysym = KEY_RETURN } -> (
     match Terminal.read () with
-    | None -> print_endline "escaped"; loop state
-    | Some text -> print_endline ("text: " ^ text); loop state )
+    | None -> loop state
+    | Some text -> loop (process_terminal_command text state) )
   | KEYDOWN { keysym = KEY_w } -> loop (move_active_tileset_tile (-1) 0 state)
   | KEYDOWN { keysym = KEY_a } -> loop (move_active_tileset_tile 0 (-1) state)
   | KEYDOWN { keysym = KEY_s } -> loop (move_active_tileset_tile 1 0 state)

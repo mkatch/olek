@@ -14,7 +14,7 @@ let load name =
   try
     let surface = Sdlloader.load_image filename in
     { surface; name; }
-  with Sdlloader.SDLloader_exception e -> failwith ("Room.load_tileset: " ^ e)
+  with Sdlloader.SDLloader_exception e -> failwith ("Tileset.load: " ^ e)
 
 let sexp_of_t tileset = sexp_of_string tileset.name 
 
