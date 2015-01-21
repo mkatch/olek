@@ -25,7 +25,7 @@ let make rows cols =
   {
     tiles = Grid.make Tile.Void rows cols;
     layers = [];
-    tileset = Tileset.load "dummy";
+    tileset = Tileset.load "spring";
   }
 
 let tiles room = room.tiles
