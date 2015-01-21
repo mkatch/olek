@@ -1,14 +1,6 @@
 open Core.Std
 open Utils
 
-type tileset = {
-  surface : Sdlvideo.surface;
-  rows : int;
-  cols : int;
-  name : string;
-}
-
-
 type layer =
   | Uniform of Sdlvideo.color
   | Tiled of int Grid.t
