@@ -14,11 +14,11 @@ val screenshot : unit -> Sdlvideo.surface
 val blit : ?x:int -> ?y:int -> ?src_rect:Sdlvideo.rect -> Sdlvideo.surface
   -> unit
 
+val draw_rect : Sdlvideo.rect -> Sdlvideo.color -> unit
+
 val draw_filled_rect : Sdlvideo.rect -> Sdlvideo.color -> unit
 
 val draw_text : int -> int -> ?fg:Sdlvideo.color -> ?bg:Sdlvideo.color -> string
   -> unit
-
-val draw_room : View.t -> Room.t -> unit
 
 val draw_body : View.t -> Body.t -> unit

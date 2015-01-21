@@ -8,22 +8,6 @@ type tileset = {
   name : string;
 }
 
-let load_tileset name =
-  let filename = filename_concat ["data"; "tilesets"; name ^ ".png"] in
-  try
-    let surface = Sdlloader.load_image filename in
-    let w, h, _ = Sdlvideo.surface_dims surface in
-    {
-      surface = surface;
-      rows = h / Tile.size;
-      cols = w / Tile.size;
-      name = name;
-    }
-  with Sdlloader.SDLloader_exception e -> failwith ("Room.load_tileset: " ^ e)
-
-let sexp_of_tileset tileset = sexp_of_string tileset.name 
-
-let tileset_of_sexp sexp = load_tileset (string_of_sexp sexp)
 
 type layer =
   | Uniform of Sdlvideo.color
@@ -33,7 +17,7 @@ with sexp
 type t = {
   tiles : Tile.t Grid.t;
   layers : layer list;
-  tileset : tileset;
+  tileset : Tileset.t;
 }
 with sexp
 
@@ -41,7 +25,7 @@ let make rows cols =
   {
     tiles = Grid.make Tile.Void rows cols;
     layers = [];
-    tileset = load_tileset "dummy";
+    tileset = Tileset.load "dummy";
   }
 
 let tiles room = room.tiles
@@ -62,14 +46,7 @@ let move_layer ~src ~dst room =
       |> list_insert layer dst in
     { room with layers }  
 
-let set_tileset name room = { room with tileset = load_tileset name }
-
-let surface tileset = tileset.surface
-
-let tileset_src_rect tileset k =
-  let i = k / tileset.cols in
-  let j = k mod tileset.cols in
-  Sdlvideo.rect ~x:(j * Tile.size) ~y:(i * Tile.size) ~w:Tile.size ~h:Tile.size
+let set_tileset name room = { room with tileset = Tileset.load name }
 
 let input_tiles inch =
   let rec aux rrows =
@@ -81,33 +58,13 @@ let input_tiles inch =
   let rows = aux [] in
   Printf.printf "rows: %d\n" (List.length rows);
   Grid.of_lists rows
-(*
-let input_uniform_layer inch =
-  let color = In_channel.input_line inch
-    |> option_value_exn
-    |> String.split ~on:' '
-    |> List.map ~f:Int.of_string
-    |> triple_of_list_exn in
-  ignore (In_channel.input_line inch);
-  Uniform color
 
-let input_layers inch =
-  let rec aux rlayers =
-    match In_channel.input_line inch with
-    | None -> List.rev rlayers
-    | Some layer_code ->
-      match layer_code with
-      | "u" -> aux (input_uniform_layer inch :: rlayers)
-      | _ -> failwith ("Room.input_layers: Unknown layer code '" ^ layer_code ^
-                       "'") in
-  aux []
-*)
 let load name =
   let filename = filename_concat ["data"; "rooms"; name ^ ".orm"] in
   let file = In_channel.create filename in
   let tiles = input_tiles file in
   let layers = [] in
-  { tiles; layers; tileset = (load_tileset "dummy") }
+  { tiles; layers; tileset = (Tileset.load "dummy") }
 
 let make_tiles_layer tiles =
   let aux = function
@@ -121,3 +78,21 @@ let make_tiles_layer tiles =
 let add_tiles_layer room =
   let tl = make_tiles_layer room.tiles in
   { room with layers = room.layers @ [tl] }
+
+let draw_uniform_layer color = Canvas.clear color
+
+let draw_tiled_layer grid tileset view =
+  let (ox, oy) = View.int_offset view in 
+  let src = Tileset.surface tileset in
+  let s = Tile.size in
+  let draw_tile i j k = if k >= 0 then
+    let src_rect = Tileset.tile_rect tileset k in
+    Canvas.blit ~x:(j * s - ox) ~y:(i * s - oy) ~src_rect:src_rect src in
+  Grid.iteri ~f:draw_tile grid
+
+let draw_layer layer tileset view  = match layer with
+  | Uniform color -> draw_uniform_layer color
+  | Tiled grid -> draw_tiled_layer grid tileset view
+
+let draw room view =
+  List.iter ~f:(fun layer -> draw_layer layer room.tileset view) room.layers

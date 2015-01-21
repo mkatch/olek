@@ -47,4 +47,10 @@ struct
   let color_of_sexp = int_triple_of_sexp
 
   let sexp_of_color = sexp_of_int_triple
+
+  let inflate_rect amt { r_x; r_y; r_w; r_h; } =
+    rect ~x:(r_x - amt) ~y:(r_y - amt) ~w:(r_w + 2 * amt) ~h:(r_h + 2 * amt)
+
+  let rect_corners { r_x; r_y; r_w; r_h; } =
+    (r_x, r_y), (r_x + r_w, r_y + r_h)
 end

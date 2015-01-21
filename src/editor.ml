@@ -22,12 +22,15 @@ let init () =
     room = Room.add_layer (Room.Uniform Sdlvideo.blue) (Room.make 16 16);
   }
 
-let quit () = Sdl.quit ()
+let quit () =
+  Sdl.quit ();
+  Sdlttf.quit ()
 
 let draw state =
   let view = state.view in
   Canvas.clear Sdlvideo.blue;
-  Canvas.draw_room view state.room;
+  Room.draw state.room view;
+  Tileset.draw (Room.tileset state.room) ~x:0 ~y:0 ~active:0;
   Canvas.flip ()
 
 let rec loop ?redraw:(redraw = true) state =

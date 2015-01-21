@@ -17,3 +17,5 @@ val h : t -> float
 val coords : t -> float * float * float * float
 
 val int_coords : t -> int * int * int * int
+
+val to_sdl_rect : t -> Sdlvideo.rect
