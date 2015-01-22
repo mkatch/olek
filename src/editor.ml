@@ -122,6 +122,14 @@ let put_tile state =
     { state with room } 
   else state
 
+let save_re = Str.regexp
+  " *save *\\([a-z]+\\) *$"
+let save_action text state =
+  let name = Str.matched_group 1 text in
+  let filename = filename_concat ["data"; "rooms"; name ^ ".room"] in
+  Sexp.save_hum filename (Room.sexp_of_t state.room);
+  state
+
 let set_tileset_re = Str.regexp
   " *set *tileset *\\([a-z]+\\) *$"
 let set_tileset_action text state =
@@ -144,6 +152,7 @@ let add_tiled_layer_action text state =
   { state with room = Room.add_tiled_layer state.room; tiles_pos }
 
 let actions = [
+  save_re,              save_action;
   set_tileset_re,       set_tileset_action;
   add_uniform_layer_re, add_uniform_layer_action;
   add_tiled_layer_re,   add_tiled_layer_action;
