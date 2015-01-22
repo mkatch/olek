@@ -20,6 +20,8 @@ val column_cnt : t -> int
 
 val dims : t -> int * int
 
+val layer_is_tiled : t -> int -> bool
+
 val make : int -> int -> t
 
 val add_uniform_layer : Sdlvideo.color -> t -> t
@@ -29,6 +31,8 @@ val add_tiled_layer : t -> t
 val move_layer : src:int -> dst:int -> t -> t
 
 val set_tileset : string -> t -> t
+
+val put_tile : int -> int -> layer:int -> tile:int -> t -> t
 
 val load : string -> t
 

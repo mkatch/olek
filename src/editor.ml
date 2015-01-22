@@ -2,6 +2,7 @@ open Core.Std
 open Utils
 open Sdlevent
 open Sdlkey
+open Sdlmouse
 
 type state = {
   room : Room.t;
@@ -34,7 +35,15 @@ let quit () =
   Sdl.quit ();
   Sdlttf.quit ()
 
-let map_layer_to_room state i = if i >= state.tiles_pos then i + 1 else i
+let map_editor_to_room state i =
+  if i = state.tiles_pos then -1 else
+  if i > state.tiles_pos then i - 1
+  else i
+
+let map_room_to_editor state i =
+  if i = (-1) then state.tiles_pos else
+  if i >= state.tiles_pos then i + 1
+  else i 
 
 let draw_layer_list state =
   let w = Tileset.column_cnt * Tile.size in
@@ -50,7 +59,7 @@ let draw_layer_list state =
     Canvas.draw_filled_rect (Sdlvideo.rect ~x:0 ~y:y ~w:w ~h:dy) bg;
     Canvas.draw_text margin (y + margin) ~fg:fg ~bg:bg text in
   let aux i layer =
-    let i = map_layer_to_room state i in
+    let i = map_room_to_editor state i in
     let kind = match layer with
       | Room.Uniform _ -> "uniform"
       | Room.Tiled _ -> "tiled" in
@@ -91,18 +100,27 @@ let move_active_layer di state =
   let active_layer = clamp ~min:0 ~max:(layer_cnt - 1)
     (state.active_layer + di) in
   if state.active_layer = state.tiles_pos then
-    { state with active_layer; tiles_pos = active_layer }
+    { state with active_layer; tiles_pos = active_layer } else
+  if active_layer = state.tiles_pos then
+    (* We assume di is always either -1 or 1 *)
+    { state with active_layer; tiles_pos = state.active_layer }
   else
-    let dst = map_layer_to_room state active_layer in
-    let src = map_layer_to_room state state.active_layer in
-    let room = Room.move_layer ~src:src ~dst:dst state.room in
-    let tiles_pos = (* We assume di is always either -1 or 1 *)
-      if state.tiles_pos = active_layer then state.active_layer
-      else state.tiles_pos in 
-    { state with active_layer; room; tiles_pos }
+    let dst = map_editor_to_room state active_layer in
+    let src = map_editor_to_room state state.active_layer in
+    let room = Room.move_layer ~src:src ~dst:dst state.room in 
+    { state with active_layer; room }
 
 let update_hover_tile x y state =
   { state with hover_tile = (y / Tile.size, x / Tile.size)}
+
+let put_tile state =
+  let l = map_editor_to_room state state.active_layer in
+  if Room.layer_is_tiled state.room l then
+    let (i, j) = state.hover_tile in
+    let t = state.active_tileset_tile in
+    let room = Room.put_tile i j ~layer:l ~tile:t state.room in
+    { state with room } 
+  else state
 
 let set_tileset_re = Str.regexp
   " *set *tileset *\\([a-z]+\\) *$"
@@ -116,12 +134,14 @@ let add_uniform_layer_action text state =
   let r = Int.of_string (Str.matched_group 1 text) in
   let g = Int.of_string (Str.matched_group 2 text) in
   let b = Int.of_string (Str.matched_group 3 text) in
-  { state with room = Room.add_uniform_layer (r, g, b) state.room }
+  let tiles_pos = state.tiles_pos + 1 in
+  { state with room = Room.add_uniform_layer (r, g, b) state.room; tiles_pos }
 
 let add_tiled_layer_re = Str.regexp
   " *add *tiled *layer *$"
 let add_tiled_layer_action text state =
-  { state with room = Room.add_tiled_layer state.room }
+  let tiles_pos = state.tiles_pos + 1 in
+  { state with room = Room.add_tiled_layer state.room; tiles_pos }
 
 let actions = [
   set_tileset_re,       set_tileset_action;
@@ -157,6 +177,7 @@ let rec loop ?redraw:(redraw = true) state =
     if keymod land kmod_shift <> 0 then loop (move_active_layer (-1) state) 
     else loop (change_active_layer (-1) state)
   | MOUSEMOTION { mme_x = x; mme_y = y } -> loop (update_hover_tile x y state)
+  | MOUSEBUTTONDOWN { mbe_button = BUTTON_LEFT } -> loop (put_tile state)
   | _ -> loop state ~redraw:false
 
 let main () =

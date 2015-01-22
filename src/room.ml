@@ -27,6 +27,12 @@ let column_cnt room = Grid.column_cnt room.tiles
 
 let dims room = Grid.dims room.tiles
 
+let layer_is_tiled room i =
+  if i = (-1) then true
+  else match List.nth room.layers i with
+    | Some (Tiled _) -> true
+    | _ -> false
+
 let make rows cols =
   {
     tiles = Grid.make Tile.Void rows cols;
@@ -54,6 +60,15 @@ let move_layer ~src ~dst room =
     { room with layers }  
 
 let set_tileset name room = { room with tileset = Tileset.load name }
+
+let put_tile i j ~layer ~tile room =
+  let rec aux n layers = match n, layers with
+    | _, [] -> failwith "Room.put_tile: No such layer"
+    | 0, Tiled g :: layers -> Tiled (Grid.set i j tile g) :: layers
+    | 0, _ -> failwith "Room.put_tile: Cannot put tile to non-tiled layer"
+    | n, layer :: layers -> layer :: aux (n - 1) layers in
+  if layer >= 0 then { room with layers = aux layer room.layers }
+  else { room with tiles = Grid.set i j (Tile.of_int tile) room.tiles }
 
 let input_tiles inch =
   let rec aux rrows =
