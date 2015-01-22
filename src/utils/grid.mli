@@ -1,12 +1,13 @@
 type 'a t with sexp
 
+val row_cnt : 'a t -> int
+
+val column_cnt : 'a t -> int
+
+val dims : 'a t -> int * int
+
 val make : 'a -> int -> int -> 'a t
 
-(*
-val sexp_of_t : ('a -> Sexp.t) -> 'a t -> Sexp.t
-
-val t_of_sexp : (Sexp.t -> 'a) -> Sexp.t -> 'a t
-*)
 val of_lists : 'a list list -> 'a t
 
 val get : int -> int -> 'a t -> 'a

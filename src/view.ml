@@ -1,7 +1,7 @@
 open Utils
 
 type t = {
-  offset : vector
+  offset : vector;
 }
 
 let make offset = { offset }

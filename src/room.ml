@@ -13,21 +13,36 @@ type t = {
 }
 with sexp
 
-let make rows cols =
-  {
-    tiles = Grid.make Tile.Void rows cols;
-    layers = [];
-    tileset = Tileset.load "spring";
-  }
-
 let tiles room = room.tiles
 
 let layers room = room.layers
 
 let tileset room = room.tileset
 
+let layer_cnt room = List.length room.layers
+
+let row_cnt room = Grid.row_cnt room.tiles
+
+let column_cnt room = Grid.column_cnt room.tiles
+
+let dims room = Grid.dims room.tiles
+
+let make rows cols =
+  {
+    tiles = Grid.make Tile.Void rows cols;
+    layers = [];
+    tileset = Tileset.load "dummy";
+  }
+
 let add_layer layer ?i:(i = 1) room =
   { room with layers = list_insert layer (i - 1) room.layers }
+
+let add_uniform_layer color room =
+  { room with layers = Uniform color :: room.layers }
+
+let add_tiled_layer room =
+  let r, c = dims room in
+  { room with layers = Tiled (Grid.make (-1) r c) :: room.layers }
 
 let move_layer ~src ~dst room =
   match List.nth room.layers src with
@@ -82,9 +97,20 @@ let draw_tiled_layer grid tileset view =
     Canvas.blit ~x:(j * s - ox) ~y:(i * s - oy) ~src_rect:src_rect src in
   Grid.iteri ~f:draw_tile grid
 
+let draw_tiles grid view =
+  let (ox, oy) = View.int_offset view in
+  let src = Tileset.surface Tileset.tiles in
+  let s = Tile.size in
+  let draw_tile i j tile = if tile <> Tile.Void then
+    let k = Tile.to_int tile in
+    let src_rect = Tileset.tile_rect Tileset.tiles k in
+    Canvas.blit ~x:(j * s - ox) ~y:(i * s - oy) ~src_rect:src_rect src in
+  Grid.iteri ~f:draw_tile grid
+
 let draw_layer layer tileset view  = match layer with
   | Uniform color -> draw_uniform_layer color
   | Tiled grid -> draw_tiled_layer grid tileset view
 
-let draw room view =
-  List.iter ~f:(fun layer -> draw_layer layer room.tileset view) room.layers
+let draw room ?draw_tiles:(draw_t = false) view  =
+  List.iter ~f:(fun layer -> draw_layer layer room.tileset view) room.layers;
+  if draw_t then draw_tiles room.tiles view

@@ -42,6 +42,8 @@ module Sdlvideo =
 struct
   include Sdlvideo
 
+  let gray = (128, 128, 128)
+
   type int_triple = int * int * int with sexp
 
   let color_of_sexp = int_triple_of_sexp

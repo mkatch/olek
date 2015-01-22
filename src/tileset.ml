@@ -3,7 +3,7 @@ open Utils
 
 type t = {
   surface : Sdlvideo.surface;
-  name : string
+  name : string;
 }
 
 let column_cnt = 8
@@ -15,6 +15,8 @@ let load name =
     let surface = Sdlloader.load_image filename in
     { surface; name; }
   with Sdlloader.SDLloader_exception e -> failwith ("Tileset.load: " ^ e)
+
+let tiles = load "tiles"
 
 let sexp_of_t tileset = sexp_of_string tileset.name 
 
