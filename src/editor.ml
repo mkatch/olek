@@ -164,6 +164,10 @@ let new_re = Str.regexp
   " *new *\\([a-z]+\\) *\\([0-9]+\\) *\\([0-9]+\\) *$"
 let new_action text state =
   let name = Str.matched_group 1 text in
+  let filename = filename_concat ["data"; "rooms"; name ^ ".room"] in
+  let proceed = Sys.file_exists filename = `No
+             || Terminal.confirm ("Room '" ^ name ^ "' exists. Proceed?") in
+  if not proceed then state else
   let column_cnt = Int.of_string (Str.matched_group 2 text) in
   let row_cnt = Int.of_string (Str.matched_group 3 text) in
   let state = make name (Room.make row_cnt column_cnt) in
@@ -171,13 +175,17 @@ let new_action text state =
   state
 
 let save_re = Str.regexp
-  " *save *\\([a-z]+\\) *$"
+  " *save *\\([a-z]+\\)? *$"
 let save_action text state =
-  let name = Str.matched_group 1 text in
+  let name = try Str.matched_group 1 text with Not_found -> state.name in
   let filename = filename_concat ["data"; "rooms"; name ^ ".room"] in
+  let do_save = Sys.file_exists filename = `No
+             || Terminal.confirm ("Overwrite '" ^ name ^ "'?") in
+  if not do_save then state else
   let state = { state with name } in
-  update_caption state;
   Sexp.save_hum filename (Room.sexp_of_t state.room);
+  update_caption state;
+  Terminal.show ("Saved '" ^ name ^ "'");
   state
 
 let load_re = Str.regexp
@@ -190,7 +198,7 @@ let load_action text state =
     let state = make name room in
     update_caption state;
     state
-  with _ -> Terminal.show_error "Unable to load room '" ^ name ^ "'"
+  with _ -> Terminal.show_error ("Unable to load room '" ^ name ^ "'"); state
 
 let set_tileset_re = Str.regexp
   " *set *tileset *\\([a-z]+\\) *$"

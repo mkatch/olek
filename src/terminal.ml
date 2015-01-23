@@ -16,7 +16,7 @@ type state = {
 
 let draw state =
   let text =
-    if not state.is_editablestate.text then state.text
+    if not state.is_editable then state.text
     else
       let text = state.text in
       let pos = state.pos in
@@ -57,7 +57,7 @@ let rec loop ?redraw:(redraw = true) state =
     loop { state with text; pos = pos + 1}
   | _ -> loop state ~redraw:false
 
-let read ?prompt:(prompt = "> ") ?text:(text = "") () = loop {
+let read ?prompt:(prompt = ">") ?text:(text = "") () = loop {
   prompt = prompt;
   text = text;
   pos = 0;
@@ -76,10 +76,25 @@ let show text = ignore (loop {
 })
 
 let show_error text = ignore (loop {
-  prompt = "Error: ";
+  prompt = "Error:";
   text = text;
   pos = 0;
   is_error = true;
   is_editable = false;
   screenshot = Canvas.screenshot ();
 })
+
+let yes_re = Str.regexp " *[Yy]\\([Ee][Ss]?\\)? *$"
+let confirm text =
+  match
+    loop {
+      prompt = text ^ " (y/n):";
+      text = "";
+      pos = 0;
+      is_error = false;
+      is_editable = true;
+      screenshot = Canvas.screenshot ();
+    }
+  with
+  | None -> false
+  | Some ans -> Str.string_match yes_re ans 0
