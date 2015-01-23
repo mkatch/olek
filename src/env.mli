@@ -6,6 +6,6 @@ val t : t -> float
 
 val dt : t -> float
 
-val make : t:float -> dt:float -> tiles:Room.tile Grid.t -> t
+val make : t:float -> dt:float -> tiles:Tile.t Grid.t -> t
 
-val tile_at : vector -> t -> Room.tile
+val tile_at : vector -> t -> Tile.t

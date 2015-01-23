@@ -12,41 +12,46 @@ type time = {
 }
 
 type state = {
-  canvas : Canvas.t;
   room : Room.t;
+  view : View.t;
   bodies : Body.t list;
   minds : mind list;
   time : time;
 }
 
+let window_width = 800
+let window_height = 600
+
 let rec make_objs n mind =
   if n <= 0 then []
   else
-    let x = Random.float 800. and y = Random.float 600. in
+    let x = Random.float 10. and y = Random.float 10. in
     let (body, mindi, cmds) = Object.create (make_v x y) mind in
     (body, mindi) :: make_objs (n - 1) mind
 
 let init ~w ~h ~fps =
   Sdl.init [`VIDEO];
   Sdlttf.init ();
-  let canvas = Canvas.init ~w:w ~h:h in
+  Canvas.init ~w:window_width ~h:window_height;
+  let room_filename = filename_concat ["data"; "rooms"; "test.room"] in
+  let room = Room.t_of_sexp (Sexp.load_sexp room_filename) in
   let objs = make_objs 1 Minds.dummy in
   let bodies, minds = List.unzip objs in
-  let room = Room.load "room" in
-  let room = Room.add_tiles_layer room in
   let time = { 
     frame = 0;
     t_ms = Sdltimer.get_ticks ();
     dt_ms = 1000 / fps;
   } in {
-    canvas = canvas;
+    room = room;
+    view = View.make Vector.nil;
     bodies = bodies;
     minds = minds;
-    room = room;
     time = time;
   }
 
-let quit () = Sdl.quit ()
+let quit () =
+  Sdl.quit ();
+  Sdlttf.quit ()
 
 let env_of_state state =
   let time = state.time in
@@ -56,10 +61,10 @@ let env_of_state state =
     ~tiles:(Room.tiles state.room)
 
 let draw state =
-  let c = state.canvas in
-  Canvas.draw_room c state.room;
-  List.iter ~f:(Canvas.draw_body c) state.bodies;
-  Canvas.flip c
+  Canvas.clear Sdlvideo.gray;
+  Room.draw state.room state.view ~draw_invisible:true;
+  List.iter ~f:(fun b -> Body.draw b state.view ~draw_bbox:true) state.bodies;
+  Canvas.flip ()
 
 let update_time state =
   let time = state.time in
@@ -103,9 +108,9 @@ let think = process_obj_events [Objevent.NextFrame]
 let focus = function
   | None -> None
   | Some state ->
-    let c = state.canvas in
+    let v = state.view in
     let b = List.hd_exn state.bodies in
-    Some { state with canvas = Canvas.focus (Body.pos b) c }
+    Some { state with view = View.focus (Body.pos b) v }
 
 let iter state =
   draw state;

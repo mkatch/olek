@@ -48,16 +48,15 @@ let sdl_rect ?offset:(offset = Vector.nil) body =
   Sdlvideo.rect ~x:(x - body.w / 2) ~y:(y - body.h / 2)
                 ~w:body.w           ~h:body.h
 
-let sprite_dst_sdl_rect ?offset:(offset = Vector.nil) body =
-  let (x, y) = Vector.to_ints (body.pos -^ offset) in
-  let (cx, cy) = Sprite.origin (Sprite.sheet body.sprite) in
-  Sdlvideo.rect (x - cx) (y - cy) 0 0 (* Width and height are unimportant *)
+let sprite_dst body =
+  let (x, y) = Vector.to_ints body.pos in
+  let (ox, oy) = Sprite.origin (Sprite.sheet body.sprite) in
+  (x - ox, y - oy)
 
-let draw body view =
-  let offset = View.offset view in
-  let src_surface, src_rect = Sprite.blit_data body.sprite in
-  let dst_rect = sprite_dst_sdl_rect ~offset:offset body in
-  let bbox = Rect.to_sdl_rect (bounding_box ~offset:offset body) in
-  Sdlvideo.blit_surface ~src:src_surface ~src_rect:src_rect
-                        ~dst:!screen     ~dst_rect:dst_rect ();
-  draw_rect bbox Sdlvideo.red
+let draw body ?draw_bbox:(draw_bbox = false) view =
+  let src, src_rect = Sprite.blit_data body.sprite in
+  let (x, y) = sprite_dst body in
+  View.blit view ~x:x ~y:y ~src_rect:src_rect src;
+  if draw_bbox then
+    let bbox = Rect.to_sdl_rect (bounding_box body) in
+    View.draw_rect view bbox Sdlvideo.red
