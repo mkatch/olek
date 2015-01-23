@@ -27,7 +27,7 @@ let rec make_objs n mind =
   if n <= 0 then []
   else
     let x = Random.float 10. and y = Random.float 10. in
-    let (body, mindi, cmds) = Object.create (make_v x y) mind in
+    let (body, mindi, _) = Object.make (make_v x y) Sexp.unit mind in
     (body, mindi) :: make_objs (n - 1) mind
 
 let init () =
@@ -96,13 +96,6 @@ let advance_sprites state =
   let bodies = List.map ~f:(Body.advance_sprite state.time.t_ms) state.bodies in
   { state with bodies }
 
-let process_obj_events (state, events) =
-  let env = env_of_state state in
-  let objs_cmdss = List.map2_exn ~f:(Object.dispatch_events events env)
-    state.bodies state.minds in
-  let bodies, minds, cmdss = unzip3 objs_cmdss in
-  { state with bodies; minds }
-
 let process_event event state =
   let open Sdlevent in
   let open Sdlkey in
@@ -116,23 +109,58 @@ let process_events state =
     match Sdlevent.poll () with
     | None -> (state, List.(concat_map ~f:Objevent.of_sdl_event (rev events)))
     | Some event -> aux (process_event event state) (event :: events) in
-  process_obj_events (aux state [])
+  aux state []
 
-let think state = process_obj_events (state, [Objevent.NextFrame])
+let react env events state =
+  let rec aux bodies minds = match bodies, minds with
+    | [], [] -> ([], [], [])
+    | body :: bodies, mind :: minds ->
+      let bodies, minds, commandss = aux bodies minds in
+      let body, mind, commands = Object.react env events body mind in
+      (body :: bodies, mind :: minds, commands :: commandss)
+    | _, _ -> failwith "Game.react: Uneven lists" in
+  let bodies, minds, commandss = aux state.bodies state.minds in
+  ({ state with bodies; minds }, commandss)
 
-let focus state =
-  let center = Body.pos (List.hd_exn state.bodies) in
-  { state with view = View.focus center state.view }
+let think env commandss state =
+  let rec aux bodies minds commandss = match bodies, minds, commandss with
+    | [], [], [] -> ([], [], [])
+    | body :: bodies, mind :: minds, commands :: commandss ->
+      let bodies, minds, commandss = aux bodies minds commandss in
+      let body, mind, commands = Object.think env body mind commands in
+      (body :: bodies, mind :: minds, commands :: commandss)
+    | _, _, _ -> failwith "Game.think: Uneven lists" in
+  let bodies, minds, commandss = aux state.bodies state.minds commandss in
+  ({ state with bodies; minds }, commandss)
+
+let process_command body mind command state =
+  let open Command in
+  match command with
+  | Print text -> print_endline text; state
+  | Focus -> { state with view = View.focus (Body.pos body) state.view }
+
+let process_commands commandss state =
+  let rec aux bodies minds commandss state = match bodies, minds, commandss with
+    | [], [], [] -> state
+    | body :: bodies, mind :: minds, commands :: commandss ->
+      let state = List.fold commands ~init:state
+                            ~f:(fun s c -> process_command body mind c s) in
+      aux bodies minds commandss state
+    | _, _, _ -> failwith "Game.process_commands: Uneven lists" in
+  aux state.bodies state.minds commandss state
 
 let rec loop state =
+  let env = env_of_state state in
+  (* Advancing sprites here may seem out of place. But this is done in order
+   * to prevent freshly set animations to be affected. *)
+  let state = advance_sprites state in
+  let state, obj_events = process_events state in
+  let state, commandss = react env obj_events state in
+  let state, commandss = think env commandss state in
+  let state = process_commands commandss state in
   draw state;
-  state
-  |> update_time
-  |> advance_sprites
-  |> process_events
-  |> think
-  |> focus
-  |> loop
+  let state = update_time state in
+  loop state
 
 let main () =
   at_exit quit;

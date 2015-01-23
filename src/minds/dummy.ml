@@ -2,29 +2,29 @@ open Core.Std
 open Utils
 open Mind
 open Sdlkey
-open Env
 
 type state = {
   dir : bool
 }
 
-
 type msg = unit
+with sexp
 
-let msg_from_int n = ()
-let msg_to_int () = 0
+type init = unit
+with sexp
 
 let run_right_sheet =
   Sprite.make_sheet ~image:"olek_run_right" ~frames:8 ~dt:60 ~origin:(0, 0)
 let run_left_sheet =
   Sprite.make_sheet ~image:"olek_run_left"  ~frames:8 ~dt:60 ~origin:(0, 0)
 
-let init body =
-  let body = body |> Body.set_dims 50 50 |> Body.set_sprite run_right_sheet in
-  let state = { dir = false } in
-  Command.just_return body state
+let default_body = Body.make Vector.nil 20 20 |> Body.set_sprite run_right_sheet
+let default_state = { dir = false }
 
-let think body state env =
+let init state body init = Command.nop
+
+let think state body env =
+  let open Command in
   let incr_of_key_state k = if is_key_pressed k then 5. else 0. in
   let dl = incr_of_key_state KEY_LEFT in
   let du = incr_of_key_state KEY_UP in
@@ -38,7 +38,6 @@ let think body state env =
     else
       let sheet = if dir then run_right_sheet else run_left_sheet in
       Body.set_sprite sheet body in 
-  Command.just_return body { state with dir }
+  set { state with dir } body >> focus
 
-let react body state event env =
-  Command.just_return body state
+let react body state event env = Command.print "lol"
