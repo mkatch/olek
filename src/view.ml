@@ -4,7 +4,6 @@ type t = {
   offset : vector;
 }
 
-let make offset = { offset }
 
 let offset view = view.offset
 
@@ -18,7 +17,12 @@ let focus center ?dt:(dt = 0.0) view =
   let w, h = Canvas.dims () in
   let view_center = Vector.of_ints (w / 2, h / 2) in
   let offset = view_center -^ center in
-  { offset = 0.05 *^ offset +^ 0.95 *^ view.offset}
+  if dt > 0.0 then
+    { offset = 0.05 *^ offset +^ 0.95 *^ view.offset}
+  else
+    { offset }
+
+let make center = focus center { offset = Vector.nil }
 
 let move_by doffset view = { offset = view.offset +^ Vector.of_ints doffset }
 

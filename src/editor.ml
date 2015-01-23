@@ -2,6 +2,7 @@ open Core.Std
 open Utils
 
 type state = {
+  name : string;
   room : Room.t;
   view : View.t;
   active_layer : int;
@@ -13,20 +14,29 @@ type state = {
 let window_width = 800
 let window_height = 600
 
+let make name room =
+  let w, h = Room.dims_px room in
+  {
+    name = name;
+    room = room;
+    view = View.make (Vector.of_ints (w / 2, h / 2));
+    active_layer = 0;
+    active_tileset_tile = 0;
+    hover_tile = (0, 0);
+    tiles_pos = 0;
+  }
+
+let update_caption state =
+  Sdlwm.set_caption ~title:("Olek Editor: " ^ state.name) ~icon:""
+
 let init () =
   Sdl.init [`VIDEO];
   Sdlttf.init ();
   Canvas.init ~w:window_width ~h:window_height;
   Sdlkey.enable_unicode true;
   Sdlkey.enable_key_repeat ();
-  {
-    room = Room.make 16 16;
-    view = View.make Vector.nil;
-    active_layer = 0;
-    active_tileset_tile = 0;
-    hover_tile = (0, 0);
-    tiles_pos = 0;
-  }
+  let state = make "untitled" (Room.make 16 16) in
+  update_caption state; state
 
 let quit () =
   Sdl.quit ();
@@ -150,12 +160,34 @@ let put_tile state =
     { state with room } 
   else state
 
+let new_re = Str.regexp
+  " *new *\\([a-z]+\\) *\\([0-9]+\\) *\\([0-9]+\\) *$"
+let new_action text state =
+  let name = Str.matched_group 1 text in
+  let column_cnt = Int.of_string (Str.matched_group 2 text) in
+  let row_cnt = Int.of_string (Str.matched_group 3 text) in
+  let state = make name (Room.make row_cnt column_cnt) in
+  update_caption state;
+  state
+
 let save_re = Str.regexp
   " *save *\\([a-z]+\\) *$"
 let save_action text state =
   let name = Str.matched_group 1 text in
   let filename = filename_concat ["data"; "rooms"; name ^ ".room"] in
+  let state = { state with name } in
+  update_caption state;
   Sexp.save_hum filename (Room.sexp_of_t state.room);
+  state
+
+let load_re = Str.regexp
+  " *load *\\([a-z]+\\) *$"
+let load_action text state =
+  let name = Str.matched_group 1 text in
+  let filename = filename_concat ["data"; "rooms"; name ^ ".room"] in
+  let room = Room.t_of_sexp (Sexp.load_sexp filename) in
+  let state = make name room in
+  update_caption state;
   state
 
 let set_tileset_re = Str.regexp
@@ -180,7 +212,9 @@ let add_tiled_layer_action text state =
   { state with room = Room.add_tiled_layer state.room; tiles_pos }
 
 let actions = [
+  new_re,               new_action;
   save_re,              save_action;
+  load_re,              load_action;
   set_tileset_re,       set_tileset_action;
   add_uniform_layer_re, add_uniform_layer_action;
   add_tiled_layer_re,   add_tiled_layer_action;

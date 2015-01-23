@@ -27,6 +27,8 @@ let column_cnt room = Grid.column_cnt room.tiles
 
 let dims room = Grid.dims room.tiles
 
+let dims_px room = let w, h = dims room in (Tile.size * w, Tile.size * h)
+
 let layer_is_tiled room i =
   if i = (-1) then true
   else match List.nth room.layers i with
@@ -94,8 +96,7 @@ let draw_tiles grid view =
   Grid.iteri ~f:draw_tile grid
 
 let draw_frame room view =
-  let w, h = dims room in
-  let w = w * Tile.size and h = h * Tile.size in
+  let w, h = dims_px room in
   let frame = Sdlvideo.rect 0 0 w h |> Sdlvideo.inflate_rect 2 in
   View.draw_rect view frame Sdlvideo.black
 

@@ -20,6 +20,8 @@ val column_cnt : t -> int
 
 val dims : t -> int * int
 
+val dims_px : t -> int * int
+
 val layer_is_tiled : t -> int -> bool
 
 val make : int -> int -> t
