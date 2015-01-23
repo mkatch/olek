@@ -70,37 +70,6 @@ let put_tile i j ~layer ~tile room =
   if layer >= 0 then { room with layers = aux layer room.layers }
   else { room with tiles = Grid.set i j (Tile.of_int tile) room.tiles }
 
-let input_tiles inch =
-  let rec aux rrows =
-    let line = Option.value_exn (In_channel.input_line inch) in
-    if String.is_empty line then List.rev rrows
-    else
-      let row = List.map ~f:(fun _ -> Tile.Void) (String.to_list line) in
-      aux (row :: rrows) in
-  let rows = aux [] in
-  Printf.printf "rows: %d\n" (List.length rows);
-  Grid.of_lists rows
-
-let load name =
-  let filename = filename_concat ["data"; "rooms"; name ^ ".orm"] in
-  let file = In_channel.create filename in
-  let tiles = input_tiles file in
-  let layers = [] in
-  { tiles; layers; tileset = (Tileset.load "dummy") }
-
-let make_tiles_layer tiles =
-  let aux = function
-    | Tile.Void -> 0
-    | Tile.Solid -> 2
-    | Tile.TopSolid -> 4
-    | Tile.Sticky -> 5 in
-  let grid = Grid.map ~f:aux tiles in
-  Tiled grid
-
-let add_tiles_layer room =
-  let tl = make_tiles_layer room.tiles in
-  { room with layers = room.layers @ [tl] }
-
 let draw_uniform_layer color = Canvas.clear color
 
 let draw_tiled_layer grid tileset view =
