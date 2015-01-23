@@ -54,12 +54,13 @@ let draw_tileset state =
 let layer_item_margin = 5
 let layer_item_height = 18 + 2 * layer_item_margin
 let draw_layer_list state =
+  let layer_cnt = Room.layer_cnt state.room + 1 in
   let w = Tileset.width in
-  let y0 = Tileset.height in
+  let y0 = Tileset.height + layer_cnt * layer_item_height in
   let margin = layer_item_margin in
   let dy = layer_item_height in 
   let draw_item i kind =
-    let y = y0 + dy * i in
+    let y = y0 - dy * (i + 1) in
     let text = Int.to_string i ^ ": " ^ kind in
     let fg, bg =
       if i = state.active_layer then (Sdlvideo.white, Sdlvideo.blue)
@@ -111,8 +112,8 @@ let move_active_tileset_tile di dj state =
   { state with active_tileset_tile = i * Tileset.column_cnt + j }
 
 let change_active_layer di state =
-  let layer_cnt = Room.layer_cnt state.room + 1 in
-  let active_layer = (state.active_layer + di) mod layer_cnt in
+  let max_layer = Room.layer_cnt state.room  in
+  let active_layer = clamp ~min: 0 ~max:max_layer (state.active_layer + di) in
   { state with active_layer }
 
 let move_active_layer di state =
@@ -210,11 +211,11 @@ let rec loop ?redraw:(redraw = true) state =
   | KEYDOWN { keysym = KEY_s } -> loop (move_active_tileset_tile 1 0 state)
   | KEYDOWN { keysym = KEY_d } -> loop (move_active_tileset_tile 0 1 state)
   | KEYDOWN { keysym = KEY_DOWN; keymod; } ->
-    if keymod land kmod_shift <> 0 then loop (move_active_layer 1 state)
-    else loop (change_active_layer 1 state)
-  | KEYDOWN { keysym = KEY_UP; keymod; } ->
-    if keymod land kmod_shift <> 0 then loop (move_active_layer (-1) state) 
+    if keymod land kmod_shift <> 0 then loop (move_active_layer (-1) state)
     else loop (change_active_layer (-1) state)
+  | KEYDOWN { keysym = KEY_UP; keymod; } ->
+    if keymod land kmod_shift <> 0 then loop (move_active_layer 1 state) 
+    else loop (change_active_layer 1 state)
   | MOUSEMOTION { mme_x; mme_y; mme_xrel; mme_yrel; mme_state } ->
     if is_key_pressed KEY_SPACE then
       loop { state with view = View.move_by (mme_xrel, mme_yrel) state.view }

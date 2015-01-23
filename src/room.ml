@@ -99,7 +99,7 @@ let draw_frame room view =
   let frame = Sdlvideo.rect 0 0 w h |> Sdlvideo.inflate_rect 2 in
   View.draw_rect view frame Sdlvideo.black
 
-let draw room ?draw_invisible:(draw_invisible = false) view  =
+let draw room ?draw_invisible:(draw_invisible = false) view =
   List.iter ~f:(fun layer -> draw_layer layer room.tileset view) room.layers;
   if draw_invisible then
     draw_frame room view;
