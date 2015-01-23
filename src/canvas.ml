@@ -6,8 +6,6 @@ let screen = ref (Sdlvideo.create_RGB_surface [] 0 0 0 0l 0l 0l 0l)
 
 let font = empty_oref ()
 
-let nil_rect = Sdlvideo.rect (-123) (-456) (-789) (-101112)
-
 let init ~w ~h =
   let font_filename = filename_concat ["data"; "fonts"; "input.ttf"] in
   screen := Sdlvideo.set_video_mode ~w:800 ~h:600 [];
@@ -28,9 +26,9 @@ let screenshot () =
   Sdlvideo.blit_surface ~src:!screen ~dst:surface ();
   surface
 
-let blit ?x:(x = 0) ?y:(y = 0) ?src_rect:(src_rect = nil_rect) src =
+let blit ?x:(x = 0) ?y:(y = 0) ?src_rect:(src_rect = Sdlvideo.nil_rect) src =
   let dst_rect = Sdlvideo.rect x y 0 0 in
-  if src_rect = nil_rect then
+  if src_rect = Sdlvideo.nil_rect then
     Sdlvideo.blit_surface ~src:src
                           ~dst:!screen ~dst_rect:dst_rect ()
   else
@@ -71,12 +69,3 @@ let draw_filled_rect rect color =
 let draw_text x y ?fg:(fg = Sdlvideo.black) ?bg:(bg = Sdlvideo.white) text =
   let rendered_text = Sdlttf.render_text_shaded !?font ~fg:fg ~bg:bg text in
   blit ~x:x ~y:y rendered_text
-
-let draw_body view body =
-  let offset = View.offset view in
-  let src_surface, src_rect = Sprite.blit_data (Body.sprite body) in
-  let dst_rect = Body.sprite_dst_sdl_rect ~offset:offset body in
-  let bbox = Rect.to_sdl_rect (Body.bounding_box ~offset:offset body) in
-  Sdlvideo.blit_surface ~src:src_surface ~src_rect:src_rect
-                        ~dst:!screen     ~dst_rect:dst_rect ();
-  draw_rect bbox Sdlvideo.red

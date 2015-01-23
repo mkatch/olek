@@ -52,3 +52,12 @@ let sprite_dst_sdl_rect ?offset:(offset = Vector.nil) body =
   let (x, y) = Vector.to_ints (body.pos -^ offset) in
   let (cx, cy) = Sprite.origin (Sprite.sheet body.sprite) in
   Sdlvideo.rect (x - cx) (y - cy) 0 0 (* Width and height are unimportant *)
+
+let draw body view =
+  let offset = View.offset view in
+  let src_surface, src_rect = Sprite.blit_data body.sprite in
+  let dst_rect = sprite_dst_sdl_rect ~offset:offset body in
+  let bbox = Rect.to_sdl_rect (bounding_box ~offset:offset body) in
+  Sdlvideo.blit_surface ~src:src_surface ~src_rect:src_rect
+                        ~dst:!screen     ~dst_rect:dst_rect ();
+  draw_rect bbox Sdlvideo.red

@@ -34,3 +34,5 @@ val bounding_box : ?offset:vector -> t -> Rect.t
 val sdl_rect : ?offset:vector -> t -> Sdlvideo.rect
 
 val sprite_dst_sdl_rect : ?offset:vector -> t -> Sdlvideo.rect
+
+val draw : t -> View.t -> unit

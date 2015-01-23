@@ -20,5 +20,3 @@ val draw_filled_rect : Sdlvideo.rect -> Sdlvideo.color -> unit
 
 val draw_text : int -> int -> ?fg:Sdlvideo.color -> ?bg:Sdlvideo.color -> string
   -> unit
-
-val draw_body : View.t -> Body.t -> unit

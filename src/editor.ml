@@ -1,8 +1,5 @@
 open Core.Std
 open Utils
-open Sdlevent
-open Sdlkey
-open Sdlmouse
 
 type state = {
   room : Room.t;
@@ -88,15 +85,15 @@ let draw_hud state =
   draw_tileset state
 
 let draw_stamp state =
-  let layer = map_editor_to_room state state.active_layer in
-  if Room.layer_is_tiled state.room layer then
+  let l= map_editor_to_room state state.active_layer in
+  if Room.layer_is_tiled state.room l then
   let tileset = tileset state in
   let active = state.active_tileset_tile in
   let (i, j) = state.hover_tile in
   let hover_tile_x = j * Tile.size and hover_tile_y = i * Tile.size in
   let src_rect = Tileset.tile_rect tileset active in
   let src = Tileset.surface tileset in
-  Canvas.blit ~x:hover_tile_x ~y:hover_tile_y ~src_rect:src_rect src
+  View.blit state.view ~x:hover_tile_x ~y:hover_tile_y ~src_rect:src_rect src
 
 let draw state =
   Canvas.clear Sdlvideo.gray;
@@ -134,13 +131,20 @@ let move_active_layer di state =
     { state with active_layer; room }
 
 let update_hover_tile x y state =
-  { state with hover_tile = (y / Tile.size, x / Tile.size)}
+  let (w, h) = Room.dims state.room in
+  let (x, y) = View.to_world state.view (x, y) in
+  let i = clamp ~min:0 ~max:(h - 1) (y / Tile.size) in
+  let j = clamp ~min:0 ~max:(w - 1) (x / Tile.size) in
+  { state with hover_tile = (i, j) }
 
 let put_tile state =
+  let open Sdlkey in
   let l = map_editor_to_room state state.active_layer in
   if Room.layer_is_tiled state.room l then
     let (i, j) = state.hover_tile in
-    let t = state.active_tileset_tile in
+    let t =
+      if get_mod_state () land kmod_shift = 0 then state.active_tileset_tile
+      else -1 in
     let room = Room.put_tile i j ~layer:l ~tile:t state.room in
     { state with room } 
   else state
@@ -191,6 +195,9 @@ let process_terminal_command text state =
 
 let rec loop ?redraw:(redraw = true) state =
   if redraw then draw state;
+  let open Sdlevent in
+  let open Sdlkey in
+  let open Sdlmouse in
   match wait_event () with
   | QUIT
   | KEYDOWN { keysym = KEY_ESCAPE } -> exit 0
@@ -208,8 +215,16 @@ let rec loop ?redraw:(redraw = true) state =
   | KEYDOWN { keysym = KEY_UP; keymod; } ->
     if keymod land kmod_shift <> 0 then loop (move_active_layer (-1) state) 
     else loop (change_active_layer (-1) state)
-  | MOUSEMOTION { mme_x = x; mme_y = y } -> loop (update_hover_tile x y state)
-  | MOUSEBUTTONDOWN { mbe_button = BUTTON_LEFT } -> loop (put_tile state)
+  | MOUSEMOTION { mme_x; mme_y; mme_xrel; mme_yrel; mme_state } ->
+    if is_key_pressed KEY_SPACE then
+      loop { state with view = View.move_by (mme_xrel, mme_yrel) state.view }
+    else
+      let state = update_hover_tile mme_x mme_y state in
+      if List.mem mme_state BUTTON_LEFT then loop (put_tile state)
+      else loop state
+  | MOUSEBUTTONDOWN { mbe_button = BUTTON_LEFT } ->
+    if is_key_pressed KEY_SPACE then loop state ~redraw:false
+    else loop (put_tile state)
   | _ -> loop state ~redraw:false
 
 let main () =

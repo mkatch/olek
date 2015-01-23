@@ -42,6 +42,8 @@ module Sdlvideo =
 struct
   include Sdlvideo
 
+  let nil_rect = Sdlvideo.rect (-1) (-1) (-1) (-1)
+
   let gray = (128, 128, 128)
 
   type int_triple = int * int * int with sexp
@@ -55,4 +57,7 @@ struct
 
   let rect_corners { r_x; r_y; r_w; r_h; } =
     (r_x, r_y), (r_x + r_w, r_y + r_h)
+
+  let move_rect (dx, dy) rect =
+    { rect with r_x = rect.r_x + dx; r_y = rect.r_y + dy }
 end
