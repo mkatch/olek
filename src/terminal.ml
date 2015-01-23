@@ -9,18 +9,24 @@ type state = {
   prompt : string;
   text : string;
   pos : int;
+  is_error : bool;
+  is_editable : bool;
   screenshot : Sdlvideo.surface;
 }
 
 let draw state =
-  let text = state.text in
-  let pos = state.pos in
-  let length = String.length text in
-  let text = String.prefix text pos ^ "|" ^ String.suffix text (length - pos) in
+  let text =
+    if not state.is_editablestate.text then state.text
+    else
+      let text = state.text in
+      let pos = state.pos in
+      let length = String.length text in
+      String.prefix text pos ^ "|" ^ String.suffix text (length - pos) in
   let w, h = Canvas.dims () in
+  let fg = if state.is_error then Sdlvideo.red else Sdlvideo.white in
   Canvas.blit state.screenshot;
   Canvas.draw_filled_rect (Sdlvideo.rect 0 (h - ta_h) w ta_h) Sdlvideo.black;
-  Canvas.draw_text marg (h - ta_h + marg) ~fg:Sdlvideo.white ~bg:Sdlvideo.black
+  Canvas.draw_text marg (h - ta_h + marg) ~fg:fg ~bg:Sdlvideo.black
     (state.prompt ^ " " ^ text);
   Canvas.flip ()
 
@@ -29,11 +35,15 @@ let rec loop ?redraw:(redraw = true) state =
   let pos = state.pos in
   let text = state.text in
   let length = String.length text in
-  match wait_event () with
+  let event = wait_event () in
+  match event with
   | QUIT -> exit 0
   | KEYDOWN { keysym = KEY_ESCAPE } -> None
   | KEYDOWN { keysym = KEY_RETURN } -> Some state.text
+  | _ -> if not state.is_editable then loop ~redraw:false state else
+  match event with
   | KEYDOWN { keysym = KEY_BACKSPACE } ->
+    if length = 0 then loop state else
     let pos = max 0 (pos - 1) in
     let text = String.prefix text pos ^ String.suffix text (length - pos - 1) in
     loop { state with text; pos; }
@@ -47,11 +57,29 @@ let rec loop ?redraw:(redraw = true) state =
     loop { state with text; pos = pos + 1}
   | _ -> loop state ~redraw:false
 
-let read ?prompt:(prompt = "> ") () =
-  let state = {
-    prompt = prompt;
-    text = "";
-    pos = 0;
-    screenshot = Canvas.screenshot ()
-  } in
-  loop state
+let read ?prompt:(prompt = "> ") ?text:(text = "") () = loop {
+  prompt = prompt;
+  text = text;
+  pos = 0;
+  is_error = false;
+  is_editable = true;
+  screenshot = Canvas.screenshot ();
+}
+
+let show text = ignore (loop {
+  prompt = "";
+  text = text;
+  pos = 0;
+  is_error = false;
+  is_editable = false;
+  screenshot = Canvas.screenshot ();
+})
+
+let show_error text = ignore (loop {
+  prompt = "Error: ";
+  text = text;
+  pos = 0;
+  is_error = true;
+  is_editable = false;
+  screenshot = Canvas.screenshot ();
+})

@@ -62,7 +62,7 @@ let draw_tileset state =
   Tileset.draw tileset ~x:0 ~y:0 ~active:active
 
 let layer_item_margin = 5
-let layer_item_height = 18 + 2 * layer_item_margin
+let layer_item_height = 17 + 2 * layer_item_margin
 let draw_layer_list state =
   let layer_cnt = Room.layer_cnt state.room + 1 in
   let w = Tileset.width in
@@ -185,10 +185,12 @@ let load_re = Str.regexp
 let load_action text state =
   let name = Str.matched_group 1 text in
   let filename = filename_concat ["data"; "rooms"; name ^ ".room"] in
-  let room = Room.t_of_sexp (Sexp.load_sexp filename) in
-  let state = make name room in
-  update_caption state;
-  state
+  try
+    let room = Room.t_of_sexp (Sexp.load_sexp filename) in
+    let state = make name room in
+    update_caption state;
+    state
+  with _ -> Terminal.show_error "Unable to load room '" ^ name ^ "'"
 
 let set_tileset_re = Str.regexp
   " *set *tileset *\\([a-z]+\\) *$"
