@@ -43,13 +43,24 @@ let map_editor_to_room state i =
 let map_room_to_editor state i =
   if i = (-1) then state.tiles_pos else
   if i >= state.tiles_pos then i + 1
-  else i 
+  else i
 
+let tileset state =
+  if state.active_layer = state.tiles_pos then Tileset.tiles
+  else Room.tileset state.room
+
+let draw_tileset state =
+  let tileset = tileset state in
+  let active = state.active_tileset_tile in
+  Tileset.draw tileset ~x:0 ~y:0 ~active:active
+
+let layer_item_margin = 5
+let layer_item_height = 18 + 2 * layer_item_margin
 let draw_layer_list state =
-  let w = Tileset.column_cnt * Tile.size in
-  let y0 = Tileset.row_cnt * Tile.size in
-  let margin = 5 in
-  let dy = 19 + 2 * margin in 
+  let w = Tileset.width in
+  let y0 = Tileset.height in
+  let margin = layer_item_margin in
+  let dy = layer_item_height in 
   let draw_item i kind =
     let y = y0 + dy * i in
     let text = Int.to_string i ^ ": " ^ kind in
@@ -67,19 +78,31 @@ let draw_layer_list state =
   List.iteri ~f:aux (Room.layers state.room);
   draw_item state.tiles_pos "physical *"
 
-let draw state =
-  let view = state.view in
-  let tileset = Room.tileset state.room in
-  let active_tileset_tile = state.active_tileset_tile in
+let draw_hud state =
+  let layer_cnt = Room.layer_cnt state.room + 1 in
+  let height = Tileset.height + layer_cnt * layer_item_height in
+  let rect = Sdlvideo.rect 0 0 Tileset.width height in
+  let rect = Sdlvideo.inflate_rect 2 rect in
+  Canvas.draw_rect rect Sdlvideo.black;
+  draw_layer_list state;
+  draw_tileset state
+
+let draw_stamp state =
+  let layer = map_editor_to_room state state.active_layer in
+  if Room.layer_is_tiled state.room layer then
+  let tileset = tileset state in
+  let active = state.active_tileset_tile in
   let (i, j) = state.hover_tile in
   let hover_tile_x = j * Tile.size and hover_tile_y = i * Tile.size in
-  let tile_rect = Tileset.tile_rect tileset active_tileset_tile in
+  let src_rect = Tileset.tile_rect tileset active in
+  let src = Tileset.surface tileset in
+  Canvas.blit ~x:hover_tile_x ~y:hover_tile_y ~src_rect:src_rect src
+
+let draw state =
   Canvas.clear Sdlvideo.gray;
-  Room.draw state.room view ~draw_tiles:true;
-  Canvas.blit ~x:hover_tile_x ~y:hover_tile_y ~src_rect:tile_rect
-    (Tileset.surface tileset);
-  Tileset.draw (Room.tileset state.room) ~x:0 ~y:0 ~active:active_tileset_tile;
-  draw_layer_list state;
+  Room.draw state.room state.view ~draw_invisible:true;
+  draw_stamp state;
+  draw_hud state;
   Canvas.flip ()
 
 let move_active_tileset_tile di dj state =

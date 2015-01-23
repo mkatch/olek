@@ -6,8 +6,10 @@ type t = {
   name : string;
 }
 
-let column_cnt = 8
 let row_cnt = 10
+let column_cnt = 8
+let width = column_cnt * Tile.size
+let height = row_cnt * Tile.size
 
 let load name =
   let filename = filename_concat ["data"; "tilesets"; name ^ ".png"] in
@@ -32,8 +34,8 @@ let tile_rect tileset k =
 let src_rect = Sdlvideo.rect 0 0 (column_cnt * Tile.size) (row_cnt * Tile.size)
 let draw tileset ~x ~y ~active =
   let active_rect = tile_rect tileset active in
-  let active_outer_rect = Sdlvideo.inflate_rect   1  active_rect in
-  let active_inner_rect = Sdlvideo.inflate_rect (-1) active_rect in
+  let active_outer_rect = Sdlvideo.inflate_rect 3  active_rect in
+  let active_inner_rect = Sdlvideo.inflate_rect 2 active_rect in
   Canvas.blit ~x:x ~y:y ~src_rect:src_rect tileset.surface;
   Canvas.draw_rect active_outer_rect Sdlvideo.red;
   Canvas.draw_rect active_inner_rect Sdlvideo.red

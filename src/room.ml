@@ -126,6 +126,6 @@ let draw_layer layer tileset view  = match layer with
   | Uniform color -> draw_uniform_layer color
   | Tiled grid -> draw_tiled_layer grid tileset view
 
-let draw room ?draw_tiles:(draw_t = false) view  =
+let draw room ?draw_invisible:(draw_invisible = false) view  =
   List.iter ~f:(fun layer -> draw_layer layer room.tileset view) room.layers;
-  if draw_t then draw_tiles room.tiles view
+  if draw_invisible then draw_tiles room.tiles view

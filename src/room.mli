@@ -36,4 +36,4 @@ val put_tile : int -> int -> layer:int -> tile:int -> t -> t
 
 val load : string -> t
 
-val draw : t -> ?draw_tiles:bool -> View.t -> unit
+val draw : t -> ?draw_invisible:bool -> View.t -> unit

@@ -57,6 +57,7 @@ let draw_vertical_line ~x ~y_beg ~y_end color =
 
 let draw_rect rect color =
   let (x0, y0), (x1, y1) = Sdlvideo.rect_corners rect in
+  let (x1, y1) = (x1 - 1, y1 - 1) in
   let color = Sdlvideo.map_RGB !screen color in
   draw_horizontal_line y0 x0 x1 color;
   draw_horizontal_line y1 x0 x1 color;
