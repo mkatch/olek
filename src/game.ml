@@ -1,14 +1,14 @@
 open Core.Std
 open Utils
-open Sdlevent
-open Sdlkey
-open Printf
 open Mind
 
 type time = {
   frame : int;
   t_ms : int;
   dt_ms : int;
+  last_fps_update_ms : int;
+  frame_at_last_fps_update : int;
+  fps : int;
 }
 
 type state = {
@@ -21,6 +21,7 @@ type state = {
 
 let window_width = 800
 let window_height = 600
+let fps = 30
 
 let rec make_objs n mind =
   if n <= 0 then []
@@ -29,7 +30,7 @@ let rec make_objs n mind =
     let (body, mindi, cmds) = Object.create (make_v x y) mind in
     (body, mindi) :: make_objs (n - 1) mind
 
-let init ~w ~h ~fps =
+let init () =
   Sdl.init [`VIDEO];
   Sdlttf.init ();
   Canvas.init ~w:window_width ~h:window_height;
@@ -37,10 +38,14 @@ let init ~w ~h ~fps =
   let room = Room.t_of_sexp (Sexp.load_sexp room_filename) in
   let objs = make_objs 1 Minds.dummy in
   let bodies, minds = List.unzip objs in
+  let ticks = Sdltimer.get_ticks () in
   let time = { 
     frame = 0;
-    t_ms = Sdltimer.get_ticks ();
+    t_ms = ticks;
     dt_ms = 1000 / fps;
+    last_fps_update_ms = ticks;
+    frame_at_last_fps_update = 0;
+    fps = 0;
   } in {
     room = room;
     view = View.make Vector.nil;
@@ -72,68 +77,65 @@ let update_time state =
   let current_t_ms = Sdltimer.get_ticks () in
   let delay_ms = max (next_t_ms - current_t_ms) 0 in
   Sdltimer.delay delay_ms;
-  let new_t_ms = Sdltimer.get_ticks () in
-  let new_time = { time with frame = time.frame + 1; t_ms = new_t_ms } in
-  { state with time = new_time }
+  let t_ms = Sdltimer.get_ticks () in
+  let frame = time.frame + 1 in
+  let time = { time with frame; t_ms } in
+  let time =
+    if t_ms >= time.last_fps_update_ms + 1000 then
+      let fps = frame - time.frame_at_last_fps_update in
+      Printf.printf "fps: %d\n" fps; flush stdout;
+      { time with
+        fps = fps;
+        frame_at_last_fps_update = frame;
+        last_fps_update_ms = t_ms;
+      }
+    else time in
+  { state with time }
 
 let advance_sprites state =
   let bodies = List.map ~f:(Body.advance_sprite state.time.t_ms) state.bodies in
   { state with bodies }
 
-let process_event state = function
+let process_obj_events (state, events) =
+  let env = env_of_state state in
+  let objs_cmdss = List.map2_exn ~f:(Object.dispatch_events events env)
+    state.bodies state.minds in
+  let bodies, minds, cmdss = unzip3 objs_cmdss in
+  { state with bodies; minds }
+
+let process_event event state =
+  let open Sdlevent in
+  let open Sdlkey in
+  match event with
   | QUIT
-  | KEYDOWN {keysym = KEY_ESCAPE} -> None
-  | _ -> Some state
+  | KEYDOWN {keysym = KEY_ESCAPE} -> exit 0
+  | _ -> state
 
 let process_events state =
   let rec aux state events =
     match Sdlevent.poll () with
-    | None -> (Some state, List.(concat_map ~f:Objevent.of_sdl_event (rev events)))
-    | Some event -> match process_event state event with
-      | None -> (None, [])
-      | Some state' -> aux state' (event :: events) in
-  aux state []
+    | None -> (state, List.(concat_map ~f:Objevent.of_sdl_event (rev events)))
+    | Some event -> aux (process_event event state) (event :: events) in
+  process_obj_events (aux state [])
 
-let process_obj_events events = function
-  | None -> None
-  | Some state ->
-    let env = env_of_state state in
-    let objs_cmdss = List.map2_exn ~f:(Object.dispatch_events events env)
-      state.bodies state.minds in
-    let bodies, minds, cmdss = unzip3 objs_cmdss in
-    Some { state with bodies = bodies; minds = minds }
+let think state = process_obj_events (state, [Objevent.NextFrame])
 
-let think = process_obj_events [Objevent.NextFrame]
+let focus state =
+  let center = Body.pos (List.hd_exn state.bodies) in
+  { state with view = View.focus center state.view }
 
-let focus = function
-  | None -> None
-  | Some state ->
-    let v = state.view in
-    let b = List.hd_exn state.bodies in
-    Some { state with view = View.focus (Body.pos b) v }
-
-let iter state =
+let rec loop state =
   draw state;
-  let state = update_time state in
-  let state = advance_sprites state in
-  let state, obj_events = process_events state in
-  let state = process_obj_events obj_events state in
-  let state = think state in
-  let state = focus state in
   state
+  |> update_time
+  |> advance_sprites
+  |> process_events
+  |> think
+  |> focus
+  |> loop
 
 let main () =
-  Random.self_init ();
-  let rec loop f t state =
-    match iter state with
-    | None -> quit ()
-    | Some state ->
-      let c = Unix.time () in
-      if t +. 1. <= c then begin
-        Printf.printf "fps: %d; %f\n%!" f c;
-        loop 1 c state
-      end else
-        loop (f + 1) t state
-  in loop 1 (Unix.time ()) (init ~w:800 ~h:600 ~fps:30)
+  at_exit quit;
+  loop (init ())
 
 let () = main ()
