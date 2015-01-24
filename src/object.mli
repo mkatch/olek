@@ -2,11 +2,17 @@ open Core.Std
 open Utils
 open Mind
 
-val make : pos:vector -> init:Sexp.t -> (module MIND)
-  -> (Body.t * mind * Command.t list)
+type t
 
-val think : Env.t -> Body.t -> mind -> Command.t list
-  -> (Body.t * mind * Command.t list)
+val body : t -> Body.t
+val set_body : Body.t -> t -> t
 
-val react : Env.t -> Objevent.t list -> Body.t -> mind
-  -> (Body.t * mind * Command.t list)
+val make : pos:vector -> init:Sexp.t -> (module MIND) -> t * Command.t list
+
+val think : Env.t -> t -> Command.t list -> t * Command.t list
+
+val react : Env.t -> Objevent.t list -> t -> t * Command.t list
+
+val advance_sprite : int -> t -> t
+
+val draw : View.t -> t -> unit

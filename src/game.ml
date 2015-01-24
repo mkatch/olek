@@ -14,8 +14,7 @@ type time = {
 type state = {
   room : Room.t;
   view : View.t;
-  bodies : Body.t list;
-  minds : mind list;
+  objs : Object.t list;
   time : time;
 }
 
@@ -27,8 +26,8 @@ let rec make_objs n mind =
   if n <= 0 then []
   else
     let x = Random.float 10. and y = Random.float 10. in
-    let (body, mindi, _) = Object.make (make_v x y) Sexp.unit mind in
-    (body, mindi) :: make_objs (n - 1) mind
+    let (obj, _) = Object.make (make_v x y) Sexp.unit mind in
+    obj :: make_objs (n - 1) mind
 
 let init () =
   Sdl.init [`VIDEO];
@@ -37,7 +36,6 @@ let init () =
   let room_filename = filename_concat ["data"; "rooms"; "test.room"] in
   let room = Room.t_of_sexp (Sexp.load_sexp room_filename) in
   let objs = make_objs 1 Minds.dummy in
-  let bodies, minds = List.unzip objs in
   let ticks = Sdltimer.get_ticks () in
   let time = { 
     frame = 0;
@@ -49,8 +47,7 @@ let init () =
   } in {
     room = room;
     view = View.make Vector.nil;
-    bodies = bodies;
-    minds = minds;
+    objs = objs;
     time = time;
   }
 
@@ -68,7 +65,7 @@ let env_of_state state =
 let draw state =
   Canvas.clear Sdlvideo.gray;
   Room.draw state.room state.view ~draw_invisible:true;
-  List.iter ~f:(fun b -> Body.draw b state.view ~draw_bbox:true) state.bodies;
+  List.iter ~f:(Object.draw state.view) state.objs;
   Canvas.flip ()
 
 let update_time state =
@@ -93,8 +90,8 @@ let update_time state =
   { state with time }
 
 let advance_sprites state =
-  let bodies = List.map ~f:(Body.advance_sprite state.time.t_ms) state.bodies in
-  { state with bodies }
+  let objs = List.map ~f:(Object.advance_sprite state.time.t_ms) state.objs in
+  { state with objs }
 
 let process_event event state =
   let open Sdlevent in
@@ -112,42 +109,27 @@ let process_events state =
   aux state []
 
 let react env events state =
-  let rec aux bodies minds = match bodies, minds with
-    | [], [] -> ([], [], [])
-    | body :: bodies, mind :: minds ->
-      let bodies, minds, commandss = aux bodies minds in
-      let body, mind, commands = Object.react env events body mind in
-      (body :: bodies, mind :: minds, commands :: commandss)
-    | _, _ -> failwith "Game.react: Uneven lists" in
-  let bodies, minds, commandss = aux state.bodies state.minds in
-  ({ state with bodies; minds }, commandss)
+  let objs, commands =
+    List.unzip (List.map ~f:(Object.react env events) state.objs) in
+  ({ state with objs }, commands)
 
-let think env commandss state =
-  let rec aux bodies minds commandss = match bodies, minds, commandss with
-    | [], [], [] -> ([], [], [])
-    | body :: bodies, mind :: minds, commands :: commandss ->
-      let bodies, minds, commandss = aux bodies minds commandss in
-      let body, mind, commands = Object.think env body mind commands in
-      (body :: bodies, mind :: minds, commands :: commandss)
-    | _, _, _ -> failwith "Game.think: Uneven lists" in
-  let bodies, minds, commandss = aux state.bodies state.minds commandss in
-  ({ state with bodies; minds }, commandss)
+let think env commands state =
+  let objs, commands =
+    List.unzip (List.map2_exn ~f:(Object.think env) state.objs commands) in
+  ({ state with objs }, commands)
 
-let process_command body mind command state =
+let process_command obj state command =
   let open Command in
   match command with
   | Print text -> print_endline text; state
-  | Focus -> { state with view = View.focus (Body.pos body) state.view }
+  | Focus ->
+    let pos = Body.pos (Object.body obj) in
+    { state with view = View.focus pos state.view }
 
-let process_commands commandss state =
-  let rec aux bodies minds commandss state = match bodies, minds, commandss with
-    | [], [], [] -> state
-    | body :: bodies, mind :: minds, commands :: commandss ->
-      let state = List.fold commands ~init:state
-                            ~f:(fun s c -> process_command body mind c s) in
-      aux bodies minds commandss state
-    | _, _, _ -> failwith "Game.process_commands: Uneven lists" in
-  aux state.bodies state.minds commandss state
+let process_commands commands state =
+  let aux state obj commands = List.fold commands ~f:(process_command obj)
+                                                  ~init:state in
+  List.fold2_exn state.objs commands ~f:aux ~init:state
 
 let rec loop state =
   let env = env_of_state state in
@@ -155,9 +137,9 @@ let rec loop state =
    * to prevent freshly set animations to be affected. *)
   let state = advance_sprites state in
   let state, obj_events = process_events state in
-  let state, commandss = react env obj_events state in
-  let state, commandss = think env commandss state in
-  let state = process_commands commandss state in
+  let state, commands = react env obj_events state in
+  let state, commands = think env commands state in
+  let state = process_commands commands state in
   draw state;
   let state = update_time state in
   loop state
