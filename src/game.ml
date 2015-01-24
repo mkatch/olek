@@ -29,7 +29,7 @@ let init () =
   let room_filename = filename_concat ["data"; "rooms"; "test.room"] in
   let room = Room.t_of_sexp (Sexp.load_sexp room_filename) in
   let stub = Object.make_stub ~pos:Vector.nil ~mind:"dummy" ~init:Sexp.unit in
-  let obj, _ = Object.make stub in
+  let obj, _ = Object.make stub ~name:"olek"  in
   let ticks = Sdltimer.get_ticks () in
   let time = { 
     frame = 0;
@@ -52,9 +52,10 @@ let quit () =
 let env_of_state state =
   let time = state.time in
   Env.make
-    ~t:(Float.of_int (time.frame * time.dt_ms) /. 1000.)
-    ~dt:(Float.of_int time.dt_ms /. 1000.)
-    ~tiles:(Room.tiles state.room)
+    ~t_ms:(time.frame * time.dt_ms)
+    ~dt_ms:time.dt_ms
+    ~room:state.room
+    ~objs:(List.map ~f:Object.for_env state.objs)
 
 let draw state =
   Canvas.clear Sdlvideo.gray;

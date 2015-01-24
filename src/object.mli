@@ -20,3 +20,5 @@ val react : Env.t -> Objevent.t list -> t -> t * Command.t list
 val advance_sprite : int -> t -> t
 
 val draw : View.t -> t -> unit
+
+val for_env : t -> string option * Env.handle * Body.t

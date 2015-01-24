@@ -42,4 +42,7 @@ let think state body env =
       Body.set_sprite sheet body in 
   set { state with dir } body >> focus
 
-let react body state event env = Command.print "lol"
+let react state body env event =
+  let b = Env.named_body env "olek" in
+  let (x, y) = Vector.to_ints (Body.pos b) in
+  Command.print (Int.to_string x ^ " " ^ Int.to_string y)

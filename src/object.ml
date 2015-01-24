@@ -4,6 +4,7 @@ open Mind
 
 type t = {
   name : string option;
+  handle : Env.handle;
   body : Body.t;
   mind : mind;
 }
@@ -28,11 +29,12 @@ let make ?name:(name = "") stub =
   let init = M.init_of_sexp stub.init in 
   let chain = M.init state body init in
   let state = Option.value (Command.get_state chain) ~default:state in
+  let handle = Env.new_handle () in
+  let name = if name <> "" then Some name else None in
   let body = Option.value (Command.get_body chain) ~default:body in
   let mind = Mind.make (module M) state in
-  let name = if name <> "" then Some name else None in
   let commands = Command.get_commands chain in
-  ({ body; mind; name }, commands)
+  ({ handle; name; body; mind; }, commands)
 
 let think env obj commands =
   let (module I : MIND_INSTANCE) = obj.mind in
@@ -60,3 +62,5 @@ let react env events obj =
 let advance_sprite t obj = { obj with body = Body.advance_sprite t obj.body }
 
 let draw view obj = Body.draw obj.body view ~draw_bbox:true
+
+let for_env obj = (obj.name, obj.handle, obj.body)
