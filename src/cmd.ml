@@ -1,6 +1,7 @@
 open Core.Std
 
 type t =
+  | Message of Sexp.t * Env.handle
   | Print of string
   | Focus
 
@@ -44,6 +45,8 @@ let ( >> ) chain1 chain2 =
 let set_state state = SetState state
 let set_body body = SetBody body
 let set state body = SetState state >> SetBody body
+
+let send msg receiver = Command (Message (msg, receiver))
 
 let print text = Command (Print text)
 

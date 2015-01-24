@@ -5,6 +5,7 @@ open Mind
 type t
 type stub with sexp
 
+val handle : t -> Env.handle
 val name : t -> string option
 val body : t -> Body.t
 val set_body : Body.t -> t -> t
@@ -16,7 +17,9 @@ val make : stub -> t * Cmd.t list
 
 val think : Env.t -> t -> Cmd.t list -> t * Cmd.t list
 
-val react : Env.t -> Objevent.t list -> t -> t * Cmd.t list
+val react : Env.t -> Objevent.t list -> t -> Cmd.t list -> t * Cmd.t list
+
+val receive : Env.t -> Env.handle -> Sexp.t -> t -> t * Cmd.t list
 
 val advance_sprite : int -> t -> t
 

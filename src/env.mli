@@ -1,7 +1,12 @@
 open Utils
 
+module Handle : sig
+  type t
+  val compare : t -> t -> int
+end
+
 type t
-type handle
+type handle = Handle.t
 
 val t : t -> float
 

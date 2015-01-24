@@ -8,10 +8,10 @@ type state = {
   dir : bool
 }
 
-module Msg = struct type t = unit with sexp end
-
 type init = unit
 with sexp
+
+type msg = string with sexp
 
 let run_right_sheet =
   Sprite.make_sheet ~image:"olek_run_right" ~frames:8 ~dt:60 ~origin:(0, 0)
@@ -41,8 +41,8 @@ let think state body env =
   set { state with dir } body >> focus
 
 let react state body env event =
-  let b = Env.named_body env "olek" in
-  let (x, y) = Vector.to_ints (Body.pos b) in
-  Cmd.print (Int.to_string x ^ " " ^ Int.to_string y)
+  let me = Env.handle env "olek" in
+  Cmd.send (sexp_of_msg "Heja banana!") me
 
-let receive state body env sender msg = Cmd.print "Message received!"
+let receive state body env sender msg =
+  Cmd.print ("Message received: " ^ msg)

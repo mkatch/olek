@@ -4,7 +4,7 @@ open Utils
 module type MIND = sig
   type state
   type init with sexp
-  module Msg : Sexpable.S
+  type msg with sexp
 
   val name : string
   val default_state : state
@@ -13,8 +13,7 @@ module type MIND = sig
   val init : state -> Body.t -> init -> state Cmd.chain
   val think : state -> Body.t -> Env.t -> state Cmd.chain
   val react : state -> Body.t -> Env.t -> Objevent.t -> state Cmd.chain
-  val receive : state -> Body.t -> Env.t -> Env.handle -> Msg.t
-    -> state Cmd.chain
+  val receive : state -> Body.t -> Env.t -> Env.handle -> msg -> state Cmd.chain
 end
 
 module type INSTANCE = sig
