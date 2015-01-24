@@ -20,14 +20,7 @@ type state = {
 
 let window_width = 800
 let window_height = 600
-let fps = 30
-
-let rec make_objs n mind =
-  if n <= 0 then []
-  else
-    let x = Random.float 10. and y = Random.float 10. in
-    let (obj, _) = Object.make (make_v x y) Sexp.unit mind in
-    obj :: make_objs (n - 1) mind
+let fps_cap = 30
 
 let init () =
   Sdl.init [`VIDEO];
@@ -35,19 +28,20 @@ let init () =
   Canvas.init ~w:window_width ~h:window_height;
   let room_filename = filename_concat ["data"; "rooms"; "test.room"] in
   let room = Room.t_of_sexp (Sexp.load_sexp room_filename) in
-  let objs = make_objs 1 Minds.dummy in
+  let stub = Object.make_stub ~pos:Vector.nil ~mind:"dummy" ~init:Sexp.unit in
+  let obj, _ = Object.make stub in
   let ticks = Sdltimer.get_ticks () in
   let time = { 
     frame = 0;
     t_ms = ticks;
-    dt_ms = 1000 / fps;
+    dt_ms = 1000 / fps_cap;
     last_fps_update_ms = ticks;
     frame_at_last_fps_update = 0;
     fps = 0;
   } in {
     room = room;
     view = View.make Vector.nil;
-    objs = objs;
+    objs = [obj];
     time = time;
   }
 

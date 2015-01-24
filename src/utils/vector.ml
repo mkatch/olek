@@ -4,6 +4,7 @@ type vector = {
   x : float;
   y : float
 }
+with sexp
 
 let make x y = {x; y}
 

@@ -6,6 +6,7 @@ module rec Mind_core : sig
     type msg with sexp
     type init with sexp
 
+    val name : string
     val default_state : state
     val default_body : Body.t
 
@@ -23,6 +24,7 @@ end = struct
     type msg with sexp
     type init with sexp
 
+    val name : string
     val default_state : state
     val default_body : Body.t
 

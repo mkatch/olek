@@ -3,11 +3,15 @@ open Utils
 open Mind
 
 type t
+type stub with sexp
 
+val name : t -> string option
 val body : t -> Body.t
 val set_body : Body.t -> t -> t
 
-val make : pos:vector -> init:Sexp.t -> (module MIND) -> t * Command.t list
+val make_stub : pos:vector -> mind:string -> init:Sexp.t -> stub
+
+val make : ?name:string -> stub -> t * Command.t list
 
 val think : Env.t -> t -> Command.t list -> t * Command.t list
 

@@ -3,6 +3,8 @@ open Utils
 open Mind
 open Sdlkey
 
+let name = "dummy"
+
 type state = {
   dir : bool
 }

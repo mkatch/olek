@@ -3,23 +3,36 @@ open Utils
 open Mind
 
 type t = {
+  name : string option;
   body : Body.t;
   mind : mind;
 }
 
+type stub = {
+  pos : vector;
+  mind_name : string;
+  init : Sexp.t;
+}
+with sexp
+
+let name obj = obj.name
 let body obj = obj.body
 let set_body body obj = { obj with body }
 
-let make ~pos ~init (module M : MIND) =
-  let body = Body.set_pos pos M.default_body in
+let make_stub ~pos ~mind ~init = { pos; mind_name = mind; init; }
+
+let make ?name:(name = "") stub =
+  let (module M : MIND) = StringMap.find_exn Minds.minds stub.mind_name in
+  let body = Body.set_pos stub.pos M.default_body in
   let state = M.default_state in
-  let init = M.init_of_sexp init in 
+  let init = M.init_of_sexp stub.init in 
   let chain = M.init state body init in
   let state = Option.value (Command.get_state chain) ~default:state in
   let body = Option.value (Command.get_body chain) ~default:body in
   let mind = Mind.make (module M) state in
+  let name = if name <> "" then Some name else None in
   let commands = Command.get_commands chain in
-  ({ body; mind } , commands)
+  ({ body; mind; name }, commands)
 
 let think env obj commands =
   let (module I : MIND_INSTANCE) = obj.mind in
@@ -28,14 +41,14 @@ let think env obj commands =
   let body = Option.value (Command.get_body chain) ~default:obj.body in
   let mind = Mind.make (module I.Mind) state in
   let commands = Command.get_commands chain ~commands:commands in
-  ({ body; mind }, commands)
+  ({ obj with body; mind }, commands)
 
 let react env events obj =
   let (module I : MIND_INSTANCE) = obj.mind in
   let rec aux body state commands = function
     | [] ->
       let mind = Mind.make (module I.Mind) state in
-      ({ body; mind }, commands)
+      ({ obj with body; mind }, commands)
     | event :: events ->
       let chain = I.Mind.react state body env event in
       let state = Option.value (Command.get_state chain) ~default:state in

@@ -1,7 +1,9 @@
 open Core.Std
 include Utils_sub
 
-type vector = Vector.vector
+module StringMap = Map.Make(String)
+
+type vector = Vector.vector with sexp
 let make_v = Vector.make
 let ( +^ ) = Vector.( +^ )
 let ( -^ ) = Vector.( -^ )
