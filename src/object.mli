@@ -9,13 +9,14 @@ val name : t -> string option
 val body : t -> Body.t
 val set_body : Body.t -> t -> t
 
-val make_stub : pos:vector -> mind:string -> init:Sexp.t -> stub
+val make_stub : name:string option -> mind:Mind.mind -> pos:vector
+  -> init:Sexp.t -> stub
 
-val make : ?name:string -> stub -> t * Command.t list
+val make : stub -> t * Cmd.t list
 
-val think : Env.t -> t -> Command.t list -> t * Command.t list
+val think : Env.t -> t -> Cmd.t list -> t * Cmd.t list
 
-val react : Env.t -> Objevent.t list -> t -> t * Command.t list
+val react : Env.t -> Objevent.t list -> t -> t * Cmd.t list
 
 val advance_sprite : int -> t -> t
 

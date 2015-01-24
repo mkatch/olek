@@ -28,8 +28,12 @@ let init () =
   Canvas.init ~w:window_width ~h:window_height;
   let room_filename = filename_concat ["data"; "rooms"; "test.room"] in
   let room = Room.t_of_sexp (Sexp.load_sexp room_filename) in
-  let stub = Object.make_stub ~pos:Vector.nil ~mind:"dummy" ~init:Sexp.unit in
-  let obj, _ = Object.make stub ~name:"olek"  in
+  let stub = Object.make_stub
+               ~name:(Some "olek")
+               ~mind:(module Dummy : Mind.MIND)
+               ~pos:Vector.nil
+               ~init:Sexp.unit in
+  let obj, _ = Object.make stub in
   let ticks = Sdltimer.get_ticks () in
   let time = { 
     frame = 0;
@@ -104,27 +108,27 @@ let process_events state =
   aux state []
 
 let react env events state =
-  let objs, commands =
+  let objs, cmds =
     List.unzip (List.map ~f:(Object.react env events) state.objs) in
-  ({ state with objs }, commands)
+  ({ state with objs }, cmds)
 
-let think env commands state =
-  let objs, commands =
-    List.unzip (List.map2_exn ~f:(Object.think env) state.objs commands) in
-  ({ state with objs }, commands)
+let think env cmds state =
+  let objs, cmds =
+    List.unzip (List.map2_exn ~f:(Object.think env) state.objs cmds) in
+  ({ state with objs }, cmds)
 
-let process_command obj state command =
-  let open Command in
-  match command with
+let process_command obj state cmd =
+  let open Cmd in
+  match cmd with
   | Print text -> print_endline text; state
   | Focus ->
     let pos = Body.pos (Object.body obj) in
     { state with view = View.focus pos state.view }
 
-let process_commands commands state =
-  let aux state obj commands = List.fold commands ~f:(process_command obj)
-                                                  ~init:state in
-  List.fold2_exn state.objs commands ~f:aux ~init:state
+let process_commands cmds state =
+  let aux state obj cmds = List.fold cmds ~f:(process_command obj)
+                                          ~init:state in
+  List.fold2_exn state.objs cmds ~f:aux ~init:state
 
 let rec loop state =
   let env = env_of_state state in
@@ -132,9 +136,9 @@ let rec loop state =
    * to prevent freshly set animations to be affected. *)
   let state = advance_sprites state in
   let state, obj_events = process_events state in
-  let state, commands = react env obj_events state in
-  let state, commands = think env commands state in
-  let state = process_commands commands state in
+  let state, cmds = react env obj_events state in
+  let state, cmds = think env cmds state in
+  let state = process_commands cmds state in
   draw state;
   let state = update_time state in
   loop state

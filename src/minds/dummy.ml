@@ -1,6 +1,5 @@
 open Core.Std
 open Utils
-open Mind
 open Sdlkey
 
 let name = "dummy"
@@ -9,8 +8,7 @@ type state = {
   dir : bool
 }
 
-type msg = unit
-with sexp
+module Msg = struct type t = unit with sexp end
 
 type init = unit
 with sexp
@@ -23,10 +21,10 @@ let run_left_sheet =
 let default_body = Body.make Vector.nil 20 20 |> Body.set_sprite run_right_sheet
 let default_state = { dir = false }
 
-let init state body init = Command.nop
+let init state body init = Cmd.print "Init!"
 
 let think state body env =
-  let open Command in
+  let open Cmd in
   let incr_of_key_state k = if is_key_pressed k then 5. else 0. in
   let dl = incr_of_key_state KEY_LEFT in
   let du = incr_of_key_state KEY_UP in
@@ -45,4 +43,6 @@ let think state body env =
 let react state body env event =
   let b = Env.named_body env "olek" in
   let (x, y) = Vector.to_ints (Body.pos b) in
-  Command.print (Int.to_string x ^ " " ^ Int.to_string y)
+  Cmd.print (Int.to_string x ^ " " ^ Int.to_string y)
+
+let receive state body env sender msg = Cmd.print "Message received!"

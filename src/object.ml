@@ -1,17 +1,17 @@
 open Core.Std
 open Utils
-open Mind
 
 type t = {
-  name : string option;
   handle : Env.handle;
+  name : string option;
   body : Body.t;
-  mind : mind;
+  mind_instance : Mind.instance;
 }
 
 type stub = {
+  obj_name : string option;
+  mind : Mind.mind;
   pos : vector;
-  mind_name : string;
   init : Sexp.t;
 }
 with sexp
@@ -20,43 +20,43 @@ let name obj = obj.name
 let body obj = obj.body
 let set_body body obj = { obj with body }
 
-let make_stub ~pos ~mind ~init = { pos; mind_name = mind; init; }
+let make_stub ~name ~mind ~pos ~init = { obj_name = name; mind; pos; init; }
 
-let make ?name:(name = "") stub =
-  let (module M : MIND) = StringMap.find_exn Minds.minds stub.mind_name in
+let make stub =
+  let (module M : Mind.MIND) = stub.mind in
   let body = Body.set_pos stub.pos M.default_body in
   let state = M.default_state in
   let init = M.init_of_sexp stub.init in 
   let chain = M.init state body init in
-  let state = Option.value (Command.get_state chain) ~default:state in
+  let state = Option.value (Cmd.get_state chain) ~default:state in
   let handle = Env.new_handle () in
-  let name = if name <> "" then Some name else None in
-  let body = Option.value (Command.get_body chain) ~default:body in
-  let mind = Mind.make (module M) state in
-  let commands = Command.get_commands chain in
-  ({ handle; name; body; mind; }, commands)
+  let name = stub.obj_name in
+  let body = Option.value (Cmd.get_body chain) ~default:body in
+  let mind_instance = Mind.make_instance (module M) state in
+  let cmds = Cmd.get_cmds chain in
+  ({ handle; name; body; mind_instance; }, cmds)
 
-let think env obj commands =
-  let (module I : MIND_INSTANCE) = obj.mind in
+let think env obj cmds =
+  let (module I : Mind.INSTANCE) = obj.mind_instance in
   let chain = I.Mind.think I.state obj.body env in
-  let state = Option.value (Command.get_state chain) ~default:I.state in
-  let body = Option.value (Command.get_body chain) ~default:obj.body in
-  let mind = Mind.make (module I.Mind) state in
-  let commands = Command.get_commands chain ~commands:commands in
-  ({ obj with body; mind }, commands)
+  let state = Option.value (Cmd.get_state chain) ~default:I.state in
+  let body = Option.value (Cmd.get_body chain) ~default:obj.body in
+  let mind_instance = Mind.make_instance (module I.Mind) state in
+  let cmds = Cmd.get_cmds chain ~cmds:cmds in
+  ({ obj with body; mind_instance }, cmds)
 
 let react env events obj =
-  let (module I : MIND_INSTANCE) = obj.mind in
-  let rec aux body state commands = function
+  let (module I : Mind.INSTANCE) = obj.mind_instance in
+  let rec aux body state cmds = function
     | [] ->
-      let mind = Mind.make (module I.Mind) state in
-      ({ obj with body; mind }, commands)
+      let mind_instance = Mind.make_instance (module I.Mind) state in
+      ({ obj with body; mind_instance }, cmds)
     | event :: events ->
       let chain = I.Mind.react state body env event in
-      let state = Option.value (Command.get_state chain) ~default:state in
-      let body = Option.value (Command.get_body chain) ~default:obj.body in
-      let commands = Command.get_commands chain ~commands:commands in
-      aux body state commands events in
+      let state = Option.value (Cmd.get_state chain) ~default:state in
+      let body = Option.value (Cmd.get_body chain) ~default:obj.body in
+      let cmds = Cmd.get_cmds chain ~cmds:cmds in
+      aux body state cmds events in
   aux obj.body I.state [] events
 
 let advance_sprite t obj = { obj with body = Body.advance_sprite t obj.body }
