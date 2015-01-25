@@ -4,12 +4,13 @@ open Utils
 type state = {
   name : string;
   room : Room.t;
-  objs : Object.stub list;
   view : View.t;
   active_layer : int;
   active_tileset_tile : int;
   hover_tile : int * int;
   tiles_pos : int;
+  mode : [`World | `Obj];
+  dragging : [`DraggingWorld | `DraggingObj | `NoDragging];
 }
 
 let window_width = 800
@@ -21,11 +22,12 @@ let make name room =
     name = name;
     room = room;
     view = View.make ((w, h) /^ 2);
-    objs = [];
     active_layer = 0;
     active_tileset_tile = 0;
     hover_tile = (0, 0);
     tiles_pos = 0;
+    mode = `World;
+    dragging = `NoDragging;
   }
 
 let update_caption state =
@@ -98,7 +100,8 @@ let draw_hud state =
   draw_tileset state
 
 let draw_stamp state =
-  let l= map_editor_to_room state state.active_layer in
+  if state.mode = `World && Sdlkey.(get_mod_state () land kmod_shift) = 0 then
+  let l = map_editor_to_room state state.active_layer in
   if Room.layer_is_tiled state.room l then
   let tileset = tileset state in
   let active = state.active_tileset_tile in
@@ -110,10 +113,11 @@ let draw_stamp state =
 
 let draw state =
   Canvas.clear Sdlvideo.gray;
-  Room.draw state.room state.view ~draw_invisible:true;
+  Room.draw state.view state.room ~draw_frame:true ~draw_stubs:true
+    ~draw_tiles:(state.mode = `World)
+    ~draw_stub_frames:(state.mode = `Obj);
   draw_stamp state;
   draw_hud state;
-  List.iter ~f:(Object.draw_stub state.view) state.objs;
   Canvas.flip ()
 
 let move_active_tileset_tile di dj state =
@@ -152,6 +156,7 @@ let update_hover_tile x y state =
   { state with hover_tile = (i, j) }
 
 let put_tile state =
+  if state.mode <> `World then state else
   let open Sdlkey in
   let l = map_editor_to_room state state.active_layer in
   if Room.layer_is_tiled state.room l then
@@ -164,7 +169,7 @@ let put_tile state =
   else state
 
 let new_re = Str.regexp
-  " *new *\\([a-z]+\\) *\\([0-9]+\\) *\\([0-9]+\\) *$"
+  " *new +\\([a-z]+\\) +\\([0-9]+\\) +\\([0-9]+\\) *$"
 let new_action text state =
   let name = Str.matched_group 1 text in
   let filename = filename_concat ["data"; "rooms"; name ^ ".room"] in
@@ -177,8 +182,19 @@ let new_action text state =
   update_caption state;
   state
 
+let mode_re = Str.regexp
+  " *mode *\\( world\\| obj\\)? *$"
+let mode_action text state =
+  let mode = try
+    match Str.matched_group 1 text with
+    | " world" -> `World
+    | " obj" -> `Obj
+    | _ -> state.mode
+  with Not_found -> state.mode in
+  { state with mode }
+
 let save_re = Str.regexp
-  " *save +\\([a-z]+\\)? *$"
+  " *save *\\( [a-z]+\\)? *$"
 let save_action text state =
   let name = try Str.matched_group 1 text with Not_found -> state.name in
   let filename = filename_concat ["data"; "rooms"; name ^ ".room"] in
@@ -228,23 +244,51 @@ let add_obj_re = Str.regexp
   " *add +obj +\\([a-z]+\\) *$"
 let add_obj_action text state =
   let mind_name = Str.matched_group 1 text in
-  match StringMap.find Mind.minds mind_name with
+  match Mind.find mind_name with
   | None -> Terminal.show_error ("No mind named '" ^ mind_name ^ "'"); state
   | Some mind ->
-    let pos = v_to_floats (View.center state.view) in
-    let obj = Object.make_stub ~name:None ~mind:mind ~pos:pos ~init:Sexp.unit in
-    { state with objs = obj :: state.objs }
+    let (module M : Mind.MIND) = mind in
+    let pos = View.center state.view in
+    let init = M.sexp_of_init M.default_init in
+    let stub = Object.make_stub ~name:None ~mind:mind ~pos:pos ~init:init in
+    { state with room = Room.add_stub stub state.room }
 
-let set_obj_name_re = Str.regexp
-  " *set +obj +name *\\(-\\|[a-z]+\\) *$"
-let set_obj_name_action text state =
+let set_name_re = Str.regexp
+  " *set +name *\\(-\\|[a-z]+\\) *$"
+let set_name_action text state =
   let name = Str.matched_group 1 text in
   let name = if name = "-" then None else Some name in
-  match state.objs with
-  | [] -> Terminal.show_error "No object selected"; state
-  | obj :: objs -> { state with objs = Object.set_stub_name name obj :: objs }
+  let room = Room.map_selected_stub ~f:(Object.set_stub_name name) state.room in
+  { state with room }
+
+let edit_init_re = Str.regexp
+  " *edit +init *$"
+let edit_init_action text state =
+  if state.mode <> `Obj then (
+    Terminal.show_error "Must be in 'obj' mode";
+    state ) else
+  if List.is_empty (Room.stubs state.room) then (
+    Terminal.show_error "No objects";
+    state )
+  else
+  let edit stub =
+    let (module M : Mind.MIND) = Object.stub_mind stub in
+    let rec aux init_string =
+      match Terminal.read ~text:init_string () with
+      | None -> stub
+      | Some init_string ->
+        try
+          let init = Sexp.of_string init_string in
+          ignore (M.init_of_sexp init);
+          Object.set_stub_init init stub
+        with _ ->
+          Terminal.show_error "Incorrect expression";
+          aux init_string in
+    aux (Sexp.to_string (Object.stub_init stub)) in
+  { state with room = Room.map_selected_stub ~f:edit state.room }
 
 let actions = [
+  mode_re,              mode_action;
   new_re,               new_action;
   save_re,              save_action;
   load_re,              load_action;
@@ -252,7 +296,8 @@ let actions = [
   add_uniform_layer_re, add_uniform_layer_action;
   add_tiled_layer_re,   add_tiled_layer_action;
   add_obj_re,           add_obj_action;
-  set_obj_name_re,      set_obj_name_action;
+  set_name_re,          set_name_action;
+  edit_init_re,         edit_init_action;
 ]
 
 let process_terminal_command text state =
@@ -285,16 +330,35 @@ let rec loop ?redraw:(redraw = true) state =
   | KEYDOWN { keysym = KEY_UP; keymod; } ->
     if keymod land kmod_shift <> 0 then loop (move_active_layer 1 state) 
     else loop (change_active_layer 1 state)
-  | MOUSEMOTION { mme_x; mme_y; mme_xrel; mme_yrel; mme_state } ->
-    if is_key_pressed KEY_SPACE then
+  | MOUSEMOTION { mme_x; mme_y; mme_xrel; mme_yrel; mme_state } -> (
+    match state.dragging with
+    | `DraggingObj ->
+      let aux = Object.move_stub_by (mme_xrel, mme_yrel) in
+      let room = Room.map_selected_stub ~f:aux state.room in
+      loop { state with room }
+    | `DraggingWorld ->
       loop { state with view = View.move_by (mme_xrel, mme_yrel) state.view }
-    else
+    | `NoDragging ->
       let state = update_hover_tile mme_x mme_y state in
       if List.mem mme_state BUTTON_LEFT then loop (put_tile state)
-      else loop state
-  | MOUSEBUTTONDOWN { mbe_button = BUTTON_LEFT } ->
-    if is_key_pressed KEY_SPACE then loop state ~redraw:false
-    else loop (put_tile state)
+      else loop state )
+  | MOUSEBUTTONDOWN { mbe_button = BUTTON_LEFT; mbe_x; mbe_y } -> (
+    match state.mode with
+    | `Obj ->
+      let cursor = View.to_world state.view (mbe_x, mbe_y) in
+      let room, selected = Room.select_stub cursor state.room in
+      let dragging =
+        if is_key_pressed KEY_SPACE && not selected then `DraggingWorld else
+        if selected then `DraggingObj
+        else `NoDragging in
+      loop { state with room; dragging }
+    | `World ->
+      if is_key_pressed KEY_SPACE then
+        loop { state with dragging = `DraggingWorld } ~redraw:false
+      else loop (put_tile state) )
+  | MOUSEBUTTONUP { mbe_button = BUTTON_LEFT }
+  | KEYUP { keysym = KEY_SPACE } ->
+    loop { state with dragging = `NoDragging } ~redraw:false
   | _ -> loop state ~redraw:false
 
 let main () =

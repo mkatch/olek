@@ -33,12 +33,12 @@ let init () =
   Sdl.init [`VIDEO];
   Sdlttf.init ();
   Canvas.init ~w:window_width ~h:window_height;
-  let room_filename = filename_concat ["data"; "rooms"; "test.room"] in
+  let room_filename = filename_concat ["data"; "rooms"; "ziomek.room"] in
   let room = Room.t_of_sexp (Sexp.load_sexp room_filename) in
   let stub = Object.make_stub
                ~name:(Some "olek")
                ~mind:(module Dummy : Mind.MIND)
-               ~pos:(0., 0.)
+               ~pos:(0, 0)
                ~init:Sexp.unit in
   let obj, _ = Object.make stub in
   let ticks = Sdltimer.get_ticks () in
@@ -66,7 +66,7 @@ let env_of_state state =
   Env.make
     ~t_ms:(time.frame * time.dt_ms)
     ~dt_ms:time.dt_ms
-    ~room:state.room
+    ~tiles:(Room.tiles state.room)
     ~objs:(List.map ~f:Object.for_env state.objs)
 
 let dispatch_messages env state =
@@ -131,7 +131,7 @@ let process_commands cmds state =
 
 let draw state =
   Canvas.clear Sdlvideo.gray;
-  Room.draw state.room state.view ~draw_invisible:true;
+  Room.draw state.view state.room;
   List.iter ~f:(Object.draw state.view) state.objs;
   Canvas.flip ()
 

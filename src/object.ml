@@ -11,7 +11,7 @@ type t = {
 type stub = {
   obj_name : string option;
   mind : Mind.mind;
-  pos : float * float;
+  pos : int * int;
   init : Sexp.t;
 }
 with sexp
@@ -25,7 +25,7 @@ let make_stub ~name ~mind ~pos ~init = { obj_name = name; mind; pos; init; }
 
 let make stub =
   let (module M : Mind.MIND) = stub.mind in
-  let body = Body.set_pos stub.pos M.default_body in
+  let body = Body.set_pos (v_to_floats stub.pos) M.default_body in
   let state = M.default_state in
   let init = M.init_of_sexp stub.init in 
   let chain = M.init state body init in
@@ -71,24 +71,36 @@ let receive env sender data obj =
   let cmds = Cmd.get_cmds chain in
   ({ obj with body; mind_instance }, cmds)
 
-
 let advance_sprite t obj = { obj with body = Body.advance_sprite t obj.body }
 
 let draw view obj = Body.draw view obj.body
 
-let set_stub_name name stub = { stub with obj_name = name }
+let stub_init stub = stub.init
+let stub_mind stub = stub.mind
 
-let draw_stub view stub =
+let stub_contains (x, y) stub =
   let (module M : Mind.MIND) = stub.mind in
-  let body = Body.set_pos stub.pos M.default_body in
+  let w, h = Body.dims M.default_body in
+  let (x0, y0) = stub.pos in
+  2 * abs (x - x0) <= w && 2 * abs (y - y0) <= h 
+
+let set_stub_name name stub = { stub with obj_name = name }
+let set_stub_init init stub = { stub with init }
+let move_stub_by dpos stub = { stub with pos = stub.pos +^ dpos }
+
+let draw_stub view ?draw_frame:(draw_frame = false)
+  ?frame_color:(frame_color = Sdlvideo.red) stub =
+  let (module M : Mind.MIND) = stub.mind in
+  let body = Body.set_pos (v_to_floats stub.pos) M.default_body in
   Body.draw view body;
-  View.draw_rect view Sdlvideo.red (Body.rect body);
+  if draw_frame then (
+  View.draw_rect view frame_color (Body.rect body);
   match stub.obj_name with
   | None -> ()
   | Some name ->
     let name_w, _ = Canvas.size_text name in
     let name_x = Int.of_float (Body.x body) - name_w / 2 in
     let name_y = Int.of_float (Body.b body) + 5 in
-    View.draw_text view (name_x, name_y) Sdlvideo.red name
+    View.draw_text view (name_x, name_y) frame_color name)
 
 let for_env obj = (obj.name, obj.handle, obj.body)

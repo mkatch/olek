@@ -22,7 +22,7 @@ let t env = env.t
 
 let dt env = env.dt
 
-let make ~t_ms ~dt_ms ~room ~objs =
+let make ~t_ms ~dt_ms ~tiles ~objs =
   let rec filter_named = function
     | [] -> []
     | (Some name, handle, body) :: objs ->
@@ -32,7 +32,7 @@ let make ~t_ms ~dt_ms ~room ~objs =
   {
     t = Float.of_int t_ms /. 1000.0;
     dt = Float.of_int dt_ms /. 1000.0;
-    tiles = Room.tiles room;
+    tiles = tiles;
     named_bodies = StringMap.of_alist_exn (filter_named objs);
     bodies = HandleMap.of_alist_exn (List.map ~f:take_handle_body objs);
   }

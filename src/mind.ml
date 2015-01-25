@@ -9,6 +9,7 @@ module type MIND = sig
   val name : string
   val default_state : state
   val default_body : Body.t
+  val default_init : init
 
   val init : state -> Body.t -> init -> state Cmd.chain
   val think : state -> Body.t -> Env.t -> state Cmd.chain
@@ -28,6 +29,9 @@ let make_instance (type s) (module M : MIND with type state = s) state = (
   end : INSTANCE
 )
 
+type mind = (module MIND)
+type instance = (module INSTANCE)
+
 include Minds
 
 let mind_list = [
@@ -37,12 +41,10 @@ let minds =
   let make_kv m = let (module M : MIND) = m in (M.name, m) in
   StringMap.of_alist_exn (List.map ~f:make_kv mind_list)
 
-type mind = (module MIND)
-type instance = (module INSTANCE)
+let find name = StringMap.find minds name
+let find_exn name = StringMap.find_exn minds name
 
-let mind_of_sexp sexp =
-  let name = string_of_sexp sexp in
-  StringMap.find_exn minds name
+let mind_of_sexp sexp = find_exn (string_of_sexp sexp)
 
 let sexp_of_mind mind =
   let (module M : MIND) = mind in

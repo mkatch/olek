@@ -12,7 +12,7 @@ val t : t -> float
 
 val dt : t -> float
 
-val make : t_ms:int -> dt_ms:int -> room:Room.t ->
+val make : t_ms:int -> dt_ms:int -> tiles:Tile.t Grid.t ->
   objs:(string option * handle * Body.t) list -> t
 
 val new_handle : unit -> handle
