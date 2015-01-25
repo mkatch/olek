@@ -2,13 +2,15 @@ open Utils
 
 type t
 
-val make : float * float -> t
+val make : int * int -> t
+
+val center : t -> int * int
 
 val to_world : t -> int * int -> int * int
 
 val to_view : t -> int * int -> int * int
 
-val focus : float * float -> ?dt:float -> t -> t
+val focus : int * int -> ?dt:float -> t -> t
 
 val move_by : int * int -> t -> t
 

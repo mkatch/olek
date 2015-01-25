@@ -51,7 +51,7 @@ let init () =
     fps = 0;
   } in {
     room = room;
-    view = View.make (0., 0.);
+    view = View.make (0, 0);
     objs = [obj];
     time = time;
     messages = [];
@@ -122,7 +122,7 @@ let process_command obj state cmd =
   | Print text -> print_endline text; state
   | Focus ->
     let pos = Body.pos (Object.body obj) in
-    { state with view = View.focus pos state.view }
+    { state with view = View.focus (v_to_ints pos) state.view }
 
 let process_commands cmds state =
   let aux state obj cmds = List.fold cmds ~f:(process_command obj)

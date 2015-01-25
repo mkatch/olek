@@ -50,7 +50,7 @@ let rec loop ?redraw:(redraw = true) state =
     loop { state with pos = max 0 (pos - 1) }
   | KEYDOWN { keysym = KEY_RIGHT } ->
     loop { state with pos = min length (pos + 1) }
-  | KEYDOWN { keycode = 'a'..'z'|'A'..'Z'|'0'..'9'|' '|'.' as code } ->
+  | KEYDOWN { keycode = 'a'..'z'|'A'..'Z'|'0'..'9'|' '|'.'|'-' as code } ->
     let c = String.make 1 code in
     let text = String.prefix text pos ^ c ^ String.suffix text (length - pos) in
     loop { state with text; pos = pos + 1}

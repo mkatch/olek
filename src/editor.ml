@@ -20,7 +20,7 @@ let make name room =
   {
     name = name;
     room = room;
-    view = View.make (v_to_floats (w, h) /.^ 2.);
+    view = View.make ((w, h) /^ 2);
     objs = [];
     active_layer = 0;
     active_tileset_tile = 0;
@@ -113,6 +113,7 @@ let draw state =
   Room.draw state.room state.view ~draw_invisible:true;
   draw_stamp state;
   draw_hud state;
+  List.iter ~f:(Object.draw_stub state.view) state.objs;
   Canvas.flip ()
 
 let move_active_tileset_tile di dj state =
@@ -177,7 +178,7 @@ let new_action text state =
   state
 
 let save_re = Str.regexp
-  " *save *\\([a-z]+\\)? *$"
+  " *save +\\([a-z]+\\)? *$"
 let save_action text state =
   let name = try Str.matched_group 1 text with Not_found -> state.name in
   let filename = filename_concat ["data"; "rooms"; name ^ ".room"] in
@@ -191,7 +192,7 @@ let save_action text state =
   state
 
 let load_re = Str.regexp
-  " *load *\\([a-z]+\\) *$"
+  " *load +\\([a-z]+\\) *$"
 let load_action text state =
   let name = Str.matched_group 1 text in
   let filename = filename_concat ["data"; "rooms"; name ^ ".room"] in
@@ -203,13 +204,13 @@ let load_action text state =
   with _ -> Terminal.show_error ("Unable to load room '" ^ name ^ "'"); state
 
 let set_tileset_re = Str.regexp
-  " *set *tileset *\\([a-z]+\\) *$"
+  " *set +tileset +\\([a-z]+\\) *$"
 let set_tileset_action text state =
   let name = Str.matched_group 1 text in
   { state with room = Room.set_tileset name state.room }
 
 let add_uniform_layer_re = Str.regexp
-  " *add *uniform *layer *\\([0-9]+\\) *\\([0-9]+\\) *\\([0-9]+\\) *$"
+  " *add +uniform +layer +\\([0-9]+\\) +\\([0-9]+\\) +\\([0-9]+\\) *$"
 let add_uniform_layer_action text state =
   let r = Int.of_string (Str.matched_group 1 text) in
   let g = Int.of_string (Str.matched_group 2 text) in
@@ -218,10 +219,30 @@ let add_uniform_layer_action text state =
   { state with room = Room.add_uniform_layer (r, g, b) state.room; tiles_pos }
 
 let add_tiled_layer_re = Str.regexp
-  " *add *tiled *layer *$"
+  " *add +tiled +layer *$"
 let add_tiled_layer_action text state =
   let tiles_pos = state.tiles_pos + 1 in
   { state with room = Room.add_tiled_layer state.room; tiles_pos }
+
+let add_obj_re = Str.regexp
+  " *add +obj +\\([a-z]+\\) *$"
+let add_obj_action text state =
+  let mind_name = Str.matched_group 1 text in
+  match StringMap.find Mind.minds mind_name with
+  | None -> Terminal.show_error ("No mind named '" ^ mind_name ^ "'"); state
+  | Some mind ->
+    let pos = v_to_floats (View.center state.view) in
+    let obj = Object.make_stub ~name:None ~mind:mind ~pos:pos ~init:Sexp.unit in
+    { state with objs = obj :: state.objs }
+
+let set_obj_name_re = Str.regexp
+  " *set +obj +name *\\(-\\|[a-z]+\\) *$"
+let set_obj_name_action text state =
+  let name = Str.matched_group 1 text in
+  let name = if name = "-" then None else Some name in
+  match state.objs with
+  | [] -> Terminal.show_error "No object selected"; state
+  | obj :: objs -> { state with objs = Object.set_stub_name name obj :: objs }
 
 let actions = [
   new_re,               new_action;
@@ -230,6 +251,8 @@ let actions = [
   set_tileset_re,       set_tileset_action;
   add_uniform_layer_re, add_uniform_layer_action;
   add_tiled_layer_re,   add_tiled_layer_action;
+  add_obj_re,           add_obj_action;
+  set_obj_name_re,      set_obj_name_action;
 ]
 
 let process_terminal_command text state =

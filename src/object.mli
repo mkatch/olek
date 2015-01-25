@@ -25,6 +25,8 @@ val advance_sprite : int -> t -> t
 
 val draw : View.t -> t -> unit
 
+val set_stub_name : string option -> stub -> stub
+
 val draw_stub : View.t -> stub -> unit
 
 val for_env : t -> string option * Env.handle * Body.t

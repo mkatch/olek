@@ -76,6 +76,8 @@ let advance_sprite t obj = { obj with body = Body.advance_sprite t obj.body }
 
 let draw view obj = Body.draw view obj.body
 
+let set_stub_name name stub = { stub with obj_name = name }
+
 let draw_stub view stub =
   let (module M : Mind.MIND) = stub.mind in
   let body = Body.set_pos stub.pos M.default_body in
@@ -85,7 +87,7 @@ let draw_stub view stub =
   | None -> ()
   | Some name ->
     let name_w, _ = Canvas.size_text name in
-    let name_x = Int.of_float (Body.x body) - name_w in
+    let name_x = Int.of_float (Body.x body) - name_w / 2 in
     let name_y = Int.of_float (Body.b body) + 5 in
     View.draw_text view (name_x, name_y) Sdlvideo.red name
 
