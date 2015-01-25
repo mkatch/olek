@@ -25,9 +25,8 @@ let draw state =
   let w, h = Canvas.dims () in
   let fg = if state.is_error then Sdlvideo.red else Sdlvideo.white in
   Canvas.blit state.screenshot;
-  Canvas.draw_filled_rect (Sdlvideo.rect 0 (h - ta_h) w ta_h) Sdlvideo.black;
-  Canvas.draw_text marg (h - ta_h + marg) ~fg:fg ~bg:Sdlvideo.black
-    (state.prompt ^ " " ^ text);
+  Canvas.draw_filled_rect Sdlvideo.black (Sdlvideo.rect 0 (h - ta_h) w ta_h);
+  Canvas.draw_text (marg, h - ta_h + marg) fg (state.prompt ^ " " ^ text);
   Canvas.flip ()
 
 let rec loop ?redraw:(redraw = true) state =

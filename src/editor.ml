@@ -20,7 +20,8 @@ let make name room =
   {
     name = name;
     room = room;
-    view = View.make (Vector.of_ints (w / 2, h / 2));
+    view = View.make (v_to_floats (w, h) /.^ 2.);
+    objs = [];
     active_layer = 0;
     active_tileset_tile = 0;
     hover_tile = (0, 0);
@@ -60,7 +61,7 @@ let tileset state =
 let draw_tileset state =
   let tileset = tileset state in
   let active = state.active_tileset_tile in
-  Tileset.draw tileset ~x:0 ~y:0 ~active:active
+  Tileset.draw tileset ~pos:(0, 0) ~active:active
 
 let layer_item_margin = 5
 let layer_item_height = 17 + 2 * layer_item_margin
@@ -76,8 +77,8 @@ let draw_layer_list state =
     let fg, bg =
       if i = state.active_layer then (Sdlvideo.white, Sdlvideo.blue)
       else (Sdlvideo.black, Sdlvideo.gray) in
-    Canvas.draw_filled_rect (Sdlvideo.rect ~x:0 ~y:y ~w:w ~h:dy) bg;
-    Canvas.draw_text margin (y + margin) ~fg:fg ~bg:bg text in
+    Canvas.draw_filled_rect bg (Sdlvideo.rect ~x:0 ~y:y ~w:w ~h:dy);
+    Canvas.draw_text (margin, y + margin) fg text in
   let aux i layer =
     let i = map_room_to_editor state i in
     let kind = match layer with
@@ -92,7 +93,7 @@ let draw_hud state =
   let height = Tileset.height + layer_cnt * layer_item_height in
   let rect = Sdlvideo.rect 0 0 Tileset.width height in
   let rect = Sdlvideo.inflate_rect 2 rect in
-  Canvas.draw_rect rect Sdlvideo.black;
+  Canvas.draw_rect Sdlvideo.black rect;
   draw_layer_list state;
   draw_tileset state
 
@@ -102,10 +103,10 @@ let draw_stamp state =
   let tileset = tileset state in
   let active = state.active_tileset_tile in
   let (i, j) = state.hover_tile in
-  let hover_tile_x = j * Tile.size and hover_tile_y = i * Tile.size in
+  let hover_tile_pos = Tile.size *^ (j, i) in
   let src_rect = Tileset.tile_rect tileset active in
   let src = Tileset.surface tileset in
-  View.blit state.view ~x:hover_tile_x ~y:hover_tile_y ~src_rect:src_rect src
+  View.blit state.view ~pos:hover_tile_pos ~src_rect:src_rect src
 
 let draw state =
   Canvas.clear Sdlvideo.gray;
