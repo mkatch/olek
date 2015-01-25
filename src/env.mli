@@ -17,7 +17,7 @@ val make : t_ms:int -> dt_ms:int -> room:Room.t ->
 
 val new_handle : unit -> handle
 
-val tile_at : vector -> t -> Tile.t
+val tile_at : float * float -> t -> Tile.t
 
 val handle : t -> string -> handle
 

@@ -18,7 +18,7 @@ let run_right_sheet =
 let run_left_sheet =
   Sprite.make_sheet ~image:"olek_run_left"  ~frames:8 ~dt:60 ~origin:(0, 0)
 
-let default_body = Body.make Vector.nil 20 20 |> Body.set_sprite run_right_sheet
+let default_body = Body.make 0. 0. 20 20 |> Body.set_sprite run_right_sheet
 let default_state = { dir = false }
 
 let init state body init = Cmd.print "Init!"
@@ -30,15 +30,15 @@ let think state body env =
   let du = incr_of_key_state KEY_UP in
   let dr = incr_of_key_state KEY_RIGHT in
   let dd = incr_of_key_state KEY_DOWN in
-  let dp = make_v (dr -. dl) (dd -. du) in
+  let dp = (dr -. dl, dd -. du) in
   let body = Body.move_by dp body in
-  let dir = dp.x > 0. in
+  let dir = dr > dl in
   let body =
     if dir = state.dir then body
     else
       let sheet = if dir then run_right_sheet else run_left_sheet in
       Body.set_sprite sheet body in 
-  set { state with dir } body >> focus
+  set { dir } body >> focus
 
 let react state body env event =
   let me = Env.handle env "olek" in

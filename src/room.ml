@@ -79,7 +79,7 @@ let draw_tiled_layer grid tileset view =
   let s = Tile.size in
   let draw_tile i j k = if k >= 0 then
     let src_rect = Tileset.tile_rect tileset k in
-    View.blit view ~x:(j * s) ~y:(i * s) ~src_rect:src_rect src in
+    View.blit view ~pos:(j * s, i * s) ~src_rect:src_rect src in
   Grid.iteri ~f:draw_tile grid
 
 let draw_layer layer tileset view  = match layer with
@@ -92,13 +92,13 @@ let draw_tiles grid view =
   let draw_tile i j tile = if tile <> Tile.Void then
     let k = Tile.to_int tile in
     let src_rect = Tileset.tile_rect Tileset.tiles k in
-    View.blit view ~x:(j * s) ~y:(i * s) ~src_rect:src_rect src in
+    View.blit view ~pos:(j * s, i * s) ~src_rect:src_rect src in
   Grid.iteri ~f:draw_tile grid
 
 let draw_frame room view =
   let w, h = dims_px room in
   let frame = Sdlvideo.rect 0 0 w h |> Sdlvideo.inflate_rect 2 in
-  View.draw_rect view frame Sdlvideo.black
+  View.draw_rect view Sdlvideo.black frame
 
 let draw room ?draw_invisible:(draw_invisible = false) view =
   List.iter ~f:(fun layer -> draw_layer layer room.tileset view) room.layers;

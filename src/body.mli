@@ -3,34 +3,34 @@ open Utils
 
 type t
 
-val make : vector -> int -> int -> t
+val make : float -> float -> int -> int -> t
 
+val x : t -> float
+val y : t -> float
+val pos : t -> float * float
 val w : t -> int
-
-val set_w : int -> t -> t
-
 val h : t -> int
-
-val set_h : int -> t -> t
-
 val dims : t -> int * int
-
-val set_dims : int -> int -> t -> t
-
-val pos : t -> vector
-
-val set_pos : vector -> t -> t
-
-val move_by : vector -> t -> t
-
+val l : t -> float
+val t : t -> float
+val r : t -> float
+val b : t -> float
+val lt : t -> float * float
+val rt : t -> float * float
+val rb : t -> float * float
+val lb : t -> float * float
 val sprite : t -> Sprite.t
+val rect : t -> Sdlvideo.rect
 
+val set_x : float -> t -> t
+val set_y : float -> t -> t
+val set_pos : float * float -> t -> t
+val move_by : float * float -> t -> t
+val set_w : int -> t -> t
+val set_h : int -> t -> t
+val set_dims : int * int -> t -> t
 val set_sprite : Sprite.sheet -> t -> t
 
 val advance_sprite : int -> t -> t
 
-val bounding_box : ?offset:vector -> t -> Rect.t
-
-val sdl_rect : ?offset:vector -> t -> Sdlvideo.rect
-
-val draw : t -> ?draw_bbox:bool -> View.t -> unit
+val draw : View.t -> t -> unit

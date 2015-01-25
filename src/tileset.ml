@@ -32,10 +32,10 @@ let tile_rect tileset k =
   Sdlvideo.rect ~x:(j * Tile.size) ~y:(i * Tile.size) ~w:Tile.size ~h:Tile.size
 
 let src_rect = Sdlvideo.rect 0 0 (column_cnt * Tile.size) (row_cnt * Tile.size)
-let draw tileset ~x ~y ~active =
+let draw tileset ~pos ~active =
   let active_rect = tile_rect tileset active in
   let active_outer_rect = Sdlvideo.inflate_rect 3  active_rect in
   let active_inner_rect = Sdlvideo.inflate_rect 2 active_rect in
-  Canvas.blit ~x:x ~y:y ~src_rect:src_rect tileset.surface;
-  Canvas.draw_rect active_outer_rect Sdlvideo.red;
-  Canvas.draw_rect active_inner_rect Sdlvideo.red
+  Canvas.blit ~pos:pos ~src_rect:src_rect tileset.surface;
+  Canvas.draw_rect Sdlvideo.red active_outer_rect;
+  Canvas.draw_rect Sdlvideo.red active_inner_rect

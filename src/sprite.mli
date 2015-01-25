@@ -1,6 +1,5 @@
-type sheet
-
 type t
+type sheet
 
 val dummy_sheet : sheet
 
@@ -21,4 +20,4 @@ val origin : sheet -> int * int
 
 val advance : int -> t -> t
 
-val blit_data : t -> Sdlvideo.surface * Sdlvideo.rect
+val draw : View.t -> int * int -> t -> unit

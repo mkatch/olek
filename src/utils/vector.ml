@@ -1,25 +1,17 @@
 open Core.Std
 
-type vector = {
-  x : float;
-  y : float
-}
-with sexp
+let vx (x, _) = x
+let vy (_, y) = y
 
-let make x y = {x; y}
+let v_to_ints (x, y) = (Float.to_int x, Float.to_int y)
+let v_to_floats (x, y) = (Int.to_float x, Int.to_float y)
 
-let of_floats (x, y) = {x; y}
+let ( +^ ) (x1, y1) (x2, y2) = (x1 + x2, y1 + y2)
+let ( -^ ) (x1, y1) (x2, y2) = (x1 - x2, y1 - y2)
+let ( *^ ) a (x, y) = (a * x, a * y)
+let ( /^ ) (x, y) a = (x / a, y / a)
 
-let of_ints (x, y) = {x = Float.of_int x; y = Float.of_int y}
-
-let to_floats {x; y} = (x, y)
-
-let to_ints {x; y} = (Float.to_int x, Float.to_int y)
-
-let nil = {x = 0.; y = 0.}
-
-let ( +^ ) {x = x1; y = y1} {x = x2; y = y2} = {x = x1 +. x2; y = y1 +. y2}
-
-let ( -^ ) {x = x1; y = y1} {x = x2; y = y2} = {x = x1 -. x2; y = y1 -. y2}
-
-let ( *^ ) a {x; y} = {x = a *. x; y = a *. y}
+let ( +.^ ) (x1, y1) (x2, y2) = (x1 +. x2, y1 +. y2)
+let ( -.^ ) (x1, y1) (x2, y2) = (x1 -. x2, y1 -. y2)
+let ( *.^ ) a (x, y) = (a *. x, a *. y)
+let ( /.^ ) (x, y) a = (x /. a, y /. a)

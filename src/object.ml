@@ -11,7 +11,7 @@ type t = {
 type stub = {
   obj_name : string option;
   mind : Mind.mind;
-  pos : vector;
+  pos : float * float;
   init : Sexp.t;
 }
 with sexp
@@ -74,6 +74,19 @@ let receive env sender data obj =
 
 let advance_sprite t obj = { obj with body = Body.advance_sprite t obj.body }
 
-let draw view obj = Body.draw obj.body view ~draw_bbox:true
+let draw view obj = Body.draw view obj.body
+
+let draw_stub view stub =
+  let (module M : Mind.MIND) = stub.mind in
+  let body = Body.set_pos stub.pos M.default_body in
+  Body.draw view body;
+  View.draw_rect view Sdlvideo.red (Body.rect body);
+  match stub.obj_name with
+  | None -> ()
+  | Some name ->
+    let name_w, _ = Canvas.size_text name in
+    let name_x = Int.of_float (Body.x body) - name_w in
+    let name_y = Int.of_float (Body.b body) + 5 in
+    View.draw_text view (name_x, name_y) Sdlvideo.red name
 
 let for_env obj = (obj.name, obj.handle, obj.body)

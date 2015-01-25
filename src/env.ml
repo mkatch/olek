@@ -44,8 +44,7 @@ let new_handle () =
   handle
 
 let tile_at pos env =
-  let i = (Float.to_int pos.Vector.y) / 16 in
-  let j = (Float.to_int pos.Vector.x) / 16 in
+  let (i, j) = v_to_ints pos /^ 16 in
   Grid.get i j env.tiles
 
 let handle env name = fst (StringMap.find_exn env.named_bodies name)

@@ -2,21 +2,19 @@ open Utils
 
 type t
 
-val make : vector -> t
-
-val offset : t -> vector
-
-val int_offset : t -> int * int
+val make : float * float -> t
 
 val to_world : t -> int * int -> int * int
 
 val to_view : t -> int * int -> int * int
 
-val focus : vector -> ?dt:float -> t -> t
+val focus : float * float -> ?dt:float -> t -> t
 
 val move_by : int * int -> t -> t
 
-val blit : t -> ?x:int -> ?y:int -> ?src_rect:Sdlvideo.rect -> Sdlvideo.surface
+val blit : t -> ?pos:int * int -> ?src_rect:Sdlvideo.rect -> Sdlvideo.surface
   -> unit
 
-val draw_rect : t -> Sdlvideo.rect -> Sdlvideo.color -> unit
+val draw_rect : t -> Sdlvideo.color -> Sdlvideo.rect -> unit
+
+val draw_text : t -> int * int -> Sdlvideo.color -> string -> unit

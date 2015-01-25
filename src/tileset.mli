@@ -13,4 +13,4 @@ val surface : t -> Sdlvideo.surface
 
 val tile_rect : t -> int -> Sdlvideo.rect
 
-val draw : t -> x:int -> y:int -> active:int -> unit
+val draw : t -> pos:int * int -> active:int -> unit

@@ -3,11 +3,7 @@ include Utils_sub
 
 module StringMap = Map.Make(String)
 
-type vector = Vector.vector with sexp
-let make_v = Vector.make
-let ( +^ ) = Vector.( +^ )
-let ( -^ ) = Vector.( -^ )
-let ( *^ ) = Vector.( *^ )
+include Vector
 
 let rec unzip3 = function
   | [] -> ([], [], [])

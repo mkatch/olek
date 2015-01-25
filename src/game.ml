@@ -38,7 +38,7 @@ let init () =
   let stub = Object.make_stub
                ~name:(Some "olek")
                ~mind:(module Dummy : Mind.MIND)
-               ~pos:Vector.nil
+               ~pos:(0., 0.)
                ~init:Sexp.unit in
   let obj, _ = Object.make stub in
   let ticks = Sdltimer.get_ticks () in
@@ -51,7 +51,7 @@ let init () =
     fps = 0;
   } in {
     room = room;
-    view = View.make Vector.nil;
+    view = View.make (0., 0.);
     objs = [obj];
     time = time;
     messages = [];

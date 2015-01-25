@@ -4,6 +4,7 @@ open Utils
 type state = {
   name : string;
   room : Room.t;
+  objs : Object.stub list;
   view : View.t;
   active_layer : int;
   active_tileset_tile : int;

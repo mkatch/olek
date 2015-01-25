@@ -46,11 +46,11 @@ let advance t sprite =
   let frame = (sprite.frame + dframe) mod frames in
   { sprite with frame; t }
 
-let blit_data sprite =
-  let w, h = frame_dims sprite.sheet in (
-    sprite.sheet.surface,
-    Sdlvideo.rect ~x:(sprite.frame * w) ~y:0 ~w:w ~h:h
-  )
+let draw view pos sprite =
+  let pos = pos -^ sprite.sheet.origin in
+  let w, h = frame_dims sprite.sheet in
+  let src_rect = Sdlvideo.rect ~x:(sprite.frame * w) ~y:0 ~w:w ~h:h in
+  View.blit view ~pos:pos ~src_rect:src_rect sprite.sheet.surface
 
 let dummy_sheet = make_sheet ~image:"dummy" ~frames:1 ~dt:0 ~origin:(0, 0)
 
