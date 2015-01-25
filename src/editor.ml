@@ -183,15 +183,12 @@ let new_action text state =
   state
 
 let mode_re = Str.regexp
-  " *mode *\\( world\\| obj\\)? *$"
+  " *mode +\\(world\\|obj\\) *$"
 let mode_action text state =
-  let mode = try
-    match Str.matched_group 1 text with
-    | " world" -> `World
-    | " obj" -> `Obj
-    | _ -> state.mode
-  with Not_found -> state.mode in
-  { state with mode }
+  match Str.matched_group 1 text with
+  | " world" -> { state with mode = `World }
+  | " obj" -> { state with mode = `Obj }
+  | _ -> state
 
 let save_re = Str.regexp
   " *save *\\( [a-z]+\\)? *$"
