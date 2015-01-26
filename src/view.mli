@@ -4,10 +4,11 @@ type t
 
 val make : int * int -> t
 
+val offset : t -> int * int
+
 val center : t -> int * int
 
 val to_world : t -> int * int -> int * int
-
 val to_view : t -> int * int -> int * int
 
 val focus : int * int -> ?dt:float -> t -> t

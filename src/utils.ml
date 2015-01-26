@@ -36,6 +36,11 @@ let list_insert x i xs =
   let h, t = List.split_n xs i in
   h @ (x :: t)
 
+let actual_mod a b =
+  let b = abs b in
+  if a >= 0 then a mod b
+  else (b - ((-a) mod b)) mod b 
+
 module Sdlvideo =
 struct
   include Sdlvideo

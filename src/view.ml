@@ -4,6 +4,8 @@ type t = {
   offset : int * int;
 }
 
+let offset view = view.offset
+
 let to_world view pos = pos -^ view.offset
 let to_view view pos = pos +^ view.offset 
 

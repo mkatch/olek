@@ -10,7 +10,7 @@ type state = {
   hover_tile : int * int;
   tiles_pos : int;
   mode : [`World | `Obj];
-  dragging : [`DraggingWorld | `DraggingObj | `NoDragging];
+  dragging : [`DraggingWorld | `DraggingObj | `DraggingImage | `NoDragging];
 }
 
 let window_width = 800
@@ -85,6 +85,7 @@ let draw_layer_list state =
     let i = map_room_to_editor state i in
     let kind = match layer with
       | Room.Uniform _ -> "uniform"
+      | Room.Image _ -> "image"
       | Room.Tiled _ -> "tiled" in
     draw_item i kind in
   List.iteri ~f:aux (Room.layers state.room);
@@ -172,15 +173,16 @@ let new_re = Str.regexp
   " *new +\\([a-z]+\\) +\\([0-9]+\\) +\\([0-9]+\\) *$"
 let new_action text state =
   let name = Str.matched_group 1 text in
+  let column_cnt = Int.of_string (Str.matched_group 2 text) in
+  let row_cnt = Int.of_string (Str.matched_group 3 text) in
   let filename = filename_concat ["data"; "rooms"; name ^ ".room"] in
   let proceed = Sys.file_exists filename = `No
              || Terminal.confirm ("Room '" ^ name ^ "' exists. Proceed?") in
-  if not proceed then state else
-  let column_cnt = Int.of_string (Str.matched_group 2 text) in
-  let row_cnt = Int.of_string (Str.matched_group 3 text) in
-  let state = make name (Room.make row_cnt column_cnt) in
-  update_caption state;
-  state
+  if not proceed then state
+  else
+    let state = make name (Room.make row_cnt column_cnt) in
+    update_caption state;
+    state
 
 let mode_re = Str.regexp
   " *mode +\\(world\\|obj\\) *$"
@@ -191,7 +193,7 @@ let mode_action text state =
   | _ -> state
 
 let save_re = Str.regexp
-  " *save *\\( [a-z]+\\)? *$"
+  " *save *\\([a-z]+\\)? *$"
 let save_action text state =
   let name = try Str.matched_group 1 text with Not_found -> state.name in
   let filename = filename_concat ["data"; "rooms"; name ^ ".room"] in
@@ -205,9 +207,9 @@ let save_action text state =
   state
 
 let load_re = Str.regexp
-  " *load +\\([a-z]+\\) *$"
+  " *load *\\( \\([a-z]+\\)\\)? *$"
 let load_action text state =
-  let name = Str.matched_group 1 text in
+  let name = Str.matched_group 2 text in
   let filename = filename_concat ["data"; "rooms"; name ^ ".room"] in
   try
     let room = Room.t_of_sexp (Sexp.load_sexp filename) in
@@ -225,11 +227,18 @@ let set_tileset_action text state =
 let add_uniform_layer_re = Str.regexp
   " *add +uniform +layer +\\([0-9]+\\) +\\([0-9]+\\) +\\([0-9]+\\) *$"
 let add_uniform_layer_action text state =
-  let r = Int.of_string (Str.matched_group 1 text) in
-  let g = Int.of_string (Str.matched_group 2 text) in
-  let b = Int.of_string (Str.matched_group 3 text) in
+  let r = clamp ~min:0 ~max:255 (Int.of_string (Str.matched_group 1 text)) in
+  let g = clamp ~min:0 ~max:255 (Int.of_string (Str.matched_group 2 text)) in
+  let b = clamp ~min:0 ~max:255 (Int.of_string (Str.matched_group 3 text)) in
   let tiles_pos = state.tiles_pos + 1 in
   { state with room = Room.add_uniform_layer (r, g, b) state.room; tiles_pos }
+
+let add_image_layer_re = Str.regexp
+  " *add +image +layer +\\([a-z]+\\) *$"
+let add_image_layer_action text state =
+  let name = Str.matched_group 1 text in
+  try { state with room = Room.add_image_layer name state.room }
+  with _ -> Terminal.show_error ("No background named '" ^ name ^ "'"); state
 
 let add_tiled_layer_re = Str.regexp
   " *add +tiled +layer *$"
@@ -248,6 +257,32 @@ let rem_layer_action text state =
     else
       let i = map_editor_to_room state state.active_layer in
       { state with room = Room.rem_layer i state.room }
+
+let set_repeat_re = Str.regexp
+  " *set +repeat +\\(-\\|x\\|y\\|xy\\) *$"
+let set_repeat_action text state =
+  let repeat =
+    match Str.matched_group 1 text with
+    | "-" -> (false, false)
+    | "x" -> (true, false)
+    | "y" -> (false, true)
+    | "xy" -> (true, true)
+    | _ -> failwith "Impossible case" in
+  let l = map_editor_to_room state state.active_layer in
+  try
+    let room = Room.set_image_layer_repeat repeat l state.room in
+    { state with room }
+  with _ -> Terminal.show_error "Active layer is not an image"; state
+
+let set_parallax_re = Str.regexp
+  " *set +parallax +\\([0-9]+\\.[0-9]+\\) *$"
+let set_parallax_action text state =
+  let parallax = Float.of_string (Str.matched_group 1 text) in
+  let l = map_editor_to_room state state.active_layer in
+  try
+    let room = Room.set_image_layer_parallax parallax l state.room in
+    { state with room }
+  with _ -> Terminal.show_error "Active layer is not an image"; state
 
 let add_obj_re = Str.regexp
   " *add +obj +\\([a-z]+\\) *$"
@@ -316,8 +351,12 @@ let actions = [
 
   set_tileset_re,       set_tileset_action;
   add_uniform_layer_re, add_uniform_layer_action;
+  add_image_layer_re,   add_image_layer_action;
   add_tiled_layer_re,   add_tiled_layer_action;
   rem_layer_re,         rem_layer_action;
+
+  set_repeat_re,        set_repeat_action;
+  set_parallax_re,      set_parallax_action;
 
   add_obj_re,           add_obj_action;
   set_name_re,          set_name_action;
@@ -361,6 +400,10 @@ let rec loop ?redraw:(redraw = true) state =
       let aux = Object.move_stub_by (mme_xrel, mme_yrel) in
       let room = Room.map_selected_stub ~f:aux state.room in
       loop { state with room }
+    | `DraggingImage ->
+      let l = map_editor_to_room state state.active_layer in
+      let room = Room.move_image_layer_by (mme_xrel, mme_yrel) l state.room in
+      loop { state with room }
     | `DraggingWorld ->
       loop { state with view = View.move_by (mme_xrel, mme_yrel) state.view }
     | `NoDragging ->
@@ -378,9 +421,15 @@ let rec loop ?redraw:(redraw = true) state =
         else `NoDragging in
       loop { state with room; dragging }
     | `World ->
+      let l = map_editor_to_room state state.active_layer in
       if is_key_pressed KEY_SPACE then
-        loop { state with dragging = `DraggingWorld } ~redraw:false
-      else loop (put_tile state) )
+        loop { state with dragging = `DraggingWorld } ~redraw:false else
+      if Room.layer_is_tiled state.room l then
+        loop (put_tile state) else
+      if Room.layer_is_image state.room l then
+        loop { state with dragging = `DraggingImage } ~redraw:false
+      else
+        loop state ~redraw:false )
   | MOUSEBUTTONUP { mbe_button = BUTTON_LEFT }
   | KEYUP { keysym = KEY_SPACE } ->
     loop { state with dragging = `NoDragging } ~redraw:false
