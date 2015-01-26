@@ -123,7 +123,7 @@ let draw state =
   Canvas.clear Sdlvideo.gray;
   Room.draw state.view state.room ~draw_frame:true
     ~draw_stubs:(not state.draw_exclusive)
-    ~draw_tiles:(state.mode = `World)
+    ~draw_tiles:(state.mode = `World && state.draw_tiles)
     ~draw_stub_frames:(state.mode = `Obj)
     ~only:only;
   draw_stamp state;
@@ -226,6 +226,14 @@ let load_action text state =
     update_caption state;
     state
   with _ -> Terminal.show_error ("Unable to load room '" ^ name ^ "'"); state
+
+let show_hide_tiles_re = Str.regexp
+  " *\\(show\\|hide\\) +tiles *$"
+let show_hide_tiles_action text state =
+  match Str.matched_group 1 text with
+  | "show" -> { state with draw_tiles = true }
+  | "hide" -> { state with draw_tiles = false }
+  | _ -> failwith "Impossible case"
 
 let set_tileset_re = Str.regexp
   " *set +tileset +\\([a-z]+\\) *$"
@@ -357,6 +365,7 @@ let actions = [
   new_re,               new_action;
   save_re,              save_action;
   load_re,              load_action;
+  show_hide_tiles_re,   show_hide_tiles_action;
 
   set_tileset_re,       set_tileset_action;
   add_uniform_layer_re, add_uniform_layer_action;
