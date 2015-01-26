@@ -8,12 +8,16 @@ end
 type t
 type handle = Handle.t
 
+val make : t_ms:int
+        -> dt_ms:int
+        -> context: Context.t
+        -> tiles:Tile.t Grid.t
+        -> objs:(string option * handle * Body.t) list
+        -> t
+
 val t : t -> float
-
 val dt : t -> float
-
-val make : t_ms:int -> dt_ms:int -> tiles:Tile.t Grid.t ->
-  objs:(string option * handle * Body.t) list -> t
+val context : t -> Context.t
 
 val new_handle : unit -> handle
 

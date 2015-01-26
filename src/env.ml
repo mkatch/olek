@@ -13,16 +13,17 @@ type handle = Handle.t
 type t = {
   t : float;
   dt : float;
+  context : Context.t;
   tiles : Tile.t Grid.t;
   named_bodies : (handle * Body.t) StringMap.t;
   bodies : Body.t HandleMap.t;
 }
 
 let t env = env.t
-
 let dt env = env.dt
+let context env = env.context
 
-let make ~t_ms ~dt_ms ~tiles ~objs =
+let make ~t_ms ~dt_ms ~context ~tiles ~objs =
   let rec filter_named = function
     | [] -> []
     | (Some name, handle, body) :: objs ->
@@ -32,6 +33,7 @@ let make ~t_ms ~dt_ms ~tiles ~objs =
   {
     t = Float.of_int t_ms /. 1000.0;
     dt = Float.of_int dt_ms /. 1000.0;
+    context = context;
     tiles = tiles;
     named_bodies = StringMap.of_alist_exn (filter_named objs);
     bodies = HandleMap.of_alist_exn (List.map ~f:take_handle_body objs);

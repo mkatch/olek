@@ -13,13 +13,12 @@ val set_body : Body.t -> t -> t
 val make_stub : name:string option -> mind:Mind.mind -> pos:int * int
   -> init:Sexp.t -> stub
 
-val make : stub -> t * Cmd.t list
+val make : stub -> t
 
+val init : Env.t -> stub -> t -> t * Cmd.t list
 val think : Env.t -> t -> Cmd.t list -> t * Cmd.t list
-
 val react : Env.t -> Objevent.t list -> t -> Cmd.t list -> t * Cmd.t list
-
-val receive : Env.t -> Env.handle -> Sexp.t -> t -> t * Cmd.t list
+val receive : Env.t -> Env.handle -> Sexp.t -> t -> Cmd.t list -> t * Cmd.t list
 
 val advance_sprite : int -> t -> t
 

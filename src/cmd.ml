@@ -14,10 +14,11 @@ type 's chain =
 
 let nop = Nop
 
+(* The commands are returned in reverse order! *)
 let get_cmds ?cmds:(cmds = []) chain =
   let rec aux chain cmds = match chain with
     | Command cmd -> cmd :: cmds
-    | Node (chain1, chain2) -> aux chain1 (aux chain2 cmds)
+    | Node (chain1, chain2) -> aux chain2 (aux chain1 cmds)
     | _ -> cmds
   in aux chain cmds 
 

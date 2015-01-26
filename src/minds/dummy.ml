@@ -22,7 +22,7 @@ let default_body = Body.make 0. 0. 20 20 |> Body.set_sprite run_right_sheet
 let default_state = { dir = false }
 let default_init = ()
 
-let init state body init = Cmd.print "Init!"
+let init state body env init = Cmd.print "Init!"
 
 let think state body env =
   let open Cmd in

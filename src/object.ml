@@ -25,17 +25,22 @@ let make_stub ~name ~mind ~pos ~init = { obj_name = name; mind; pos; init; }
 
 let make stub =
   let (module M : Mind.MIND) = stub.mind in
-  let body = Body.set_pos (v_to_floats stub.pos) M.default_body in
-  let state = M.default_state in
-  let init = M.init_of_sexp stub.init in 
-  let chain = M.init state body init in
-  let state = Option.value (Cmd.get_state chain) ~default:state in
   let handle = Env.new_handle () in
   let name = stub.obj_name in
-  let body = Option.value (Cmd.get_body chain) ~default:body in
+  let body = Body.set_pos (v_to_floats stub.pos) M.default_body in
+  let state = M.default_state in
   let mind_instance = Mind.make_instance (module M) state in
+  { handle; name; body; mind_instance; }
+
+let init env stub obj =
+  let (module I : Mind.INSTANCE) = obj.mind_instance in
+  let init = I.Mind.init_of_sexp stub.init in
+  let chain = I.Mind.init I.state obj.body env init in
+  let state = Option.value (Cmd.get_state chain) ~default:I.state in
+  let body = Option.value (Cmd.get_body chain) ~default:obj.body in
   let cmds = Cmd.get_cmds chain in
-  ({ handle; name; body; mind_instance; }, cmds)
+  let mind_instance = Mind.make_instance (module I.Mind) state in
+  ({ obj with body; mind_instance }, cmds)
 
 let think env obj cmds =
   let (module I : Mind.INSTANCE) = obj.mind_instance in
@@ -61,14 +66,14 @@ let react env events obj cmds =
       aux body state cmds events in
   aux obj.body I.state cmds events
 
-let receive env sender data obj =
+let receive env sender data obj cmds =
   let (module I : Mind.INSTANCE) = obj.mind_instance in
   let msg = I.Mind.msg_of_sexp data in
   let chain = I.Mind.receive I.state obj.body env sender msg in
   let state = Option.value (Cmd.get_state chain) ~default:I.state in
   let body = Option.value (Cmd.get_body chain) ~default:obj.body in
   let mind_instance = Mind.make_instance (module I.Mind) state in
-  let cmds = Cmd.get_cmds chain in
+  let cmds = Cmd.get_cmds chain ~cmds:cmds in
   ({ obj with body; mind_instance }, cmds)
 
 let advance_sprite t obj = { obj with body = Body.advance_sprite t obj.body }

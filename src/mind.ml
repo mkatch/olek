@@ -11,7 +11,7 @@ module type MIND = sig
   val default_body : Body.t
   val default_init : init
 
-  val init : state -> Body.t -> init -> state Cmd.chain
+  val init : state -> Body.t -> Env.t -> init -> state Cmd.chain
   val think : state -> Body.t -> Env.t -> state Cmd.chain
   val react : state -> Body.t -> Env.t -> Objevent.t -> state Cmd.chain
   val receive : state -> Body.t -> Env.t -> Env.handle -> msg -> state Cmd.chain

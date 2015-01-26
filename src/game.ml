@@ -21,26 +21,30 @@ type state = {
   room : Room.t;
   view : View.t;
   objs : Object.t list;
+  context : Context.t;
   time : time;
   messages : message list;
+  pending_inits : Object.stub list;
 }
+
+type save = {
+  room_name : string;
+  context : Context.t;
+}
+with sexp
 
 let window_width = 800
 let window_height = 600
 let fps_cap = 30
 
-let init () =
+let init ~save:save =
   Sdl.init [`VIDEO];
   Sdlttf.init ();
   Canvas.init ~w:window_width ~h:window_height;
-  let room_filename = filename_concat ["data"; "rooms"; "ziomek.room"] in
+  let room_filename =
+    filename_concat ["data"; "rooms"; save.room_name ^ ".room"] in
   let room = Room.t_of_sexp (Sexp.load_sexp room_filename) in
-  let stub = Object.make_stub
-               ~name:(Some "olek")
-               ~mind:(module Dummy : Mind.MIND)
-               ~pos:(0, 0)
-               ~init:Sexp.unit in
-  let obj, _ = Object.make stub in
+  let stubs = Room.stubs room in
   let ticks = Sdltimer.get_ticks () in
   let time = { 
     frame = 0;
@@ -52,9 +56,11 @@ let init () =
   } in {
     room = room;
     view = View.make (0, 0);
-    objs = [obj];
+    objs = List.map ~f:Object.make stubs;
+    context = save.context;
     time = time;
     messages = [];
+    pending_inits = stubs;
   }
 
 let quit () =
@@ -66,22 +72,33 @@ let env_of_state state =
   Env.make
     ~t_ms:(time.frame * time.dt_ms)
     ~dt_ms:time.dt_ms
+    ~context:(state.context)
     ~tiles:(Room.tiles state.room)
     ~objs:(List.map ~f:Object.for_env state.objs)
 
-let dispatch_messages env state =
-  let rec aux msgs objs = match msgs, objs with
-    | _, [] -> []
-    | [], _ -> List.map ~f:(fun obj -> (obj, [])) objs
-    | msg :: msgs', obj :: objs' ->
+let resolve_pending_inits env state =
+  let rec aux objs stubs = match objs, stubs with
+    | objs, [] -> List.map ~f:(fun obj -> (obj, [])) objs
+    | obj :: objs, stub :: stubs -> Object.init env stub obj :: aux objs stubs
+    | _, _ -> failwith "Game.resolve_pending_inits: Impossible case" in
+  let objs, cmdss = List.unzip (aux state.objs state.pending_inits) in
+  ({ state with objs; pending_inits = [] }, cmdss)
+
+let dispatch_messages env cmdss state =
+  let rec aux msgs objs cmdss = match msgs, objs, cmdss with
+    | _, [], [] -> []
+    | [], _, _ -> List.map2_exn ~f:(fun obj cmds -> (obj, cmds)) objs cmdss
+    | msg :: msgs', obj :: objs', cmds :: cmdss' ->
       if msg.receiver = Object.handle obj then
-        Object.receive env msg.sender msg.data obj :: aux msgs' objs'
+        Object.receive env msg.sender msg.data obj cmds
+        :: aux msgs' objs' cmdss'
       else
-        (obj, []) :: aux msgs objs' in
+        (obj, cmds) :: aux msgs objs' cmdss'
+    | _, _, _ -> failwith "Game.dispatch_messages: Imposible case" in
   let message_compare msg1 msg2 =
     -(Env.Handle.compare msg1.receiver msg2.receiver) in
   let msgs = List.sort ~cmp:message_compare state.messages in
-  let objs, cmdss = List.unzip (aux msgs state.objs) in
+  let objs, cmdss = List.unzip (aux msgs state.objs cmdss) in
   ({ state with objs; messages = [] }, cmdss) 
 
 let advance_sprites state =
@@ -103,15 +120,15 @@ let process_events state =
     | Some event -> aux (process_event event state) (event :: events) in
   aux state []
 
-let react env events cmds state =
-  let objs, cmds =
-    List.unzip (List.map2_exn ~f:(Object.react env events) state.objs cmds) in
-  ({ state with objs }, cmds)
+let react env events cmdss state =
+  let objs, cmdss =
+    List.unzip (List.map2_exn ~f:(Object.react env events) state.objs cmdss) in
+  ({ state with objs }, cmdss)
 
-let think env cmds state =
-  let objs, cmds =
-    List.unzip (List.map2_exn ~f:(Object.think env) state.objs cmds) in
-  ({ state with objs }, cmds)
+let think env cmdss state =
+  let objs, cmdss =
+    List.unzip (List.map2_exn ~f:(Object.think env) state.objs cmdss) in
+  ({ state with objs }, cmdss)
 
 let process_command obj state cmd =
   let open Cmd in
@@ -125,8 +142,8 @@ let process_command obj state cmd =
     { state with view = View.focus (v_to_ints pos) state.view }
 
 let process_commands cmds state =
-  let aux state obj cmds = List.fold cmds ~f:(process_command obj)
-                                          ~init:state in
+  let aux state obj cmds = List.fold ~f:(process_command obj) ~init:state
+                                     (List.rev cmds) in
   List.fold2_exn state.objs cmds ~f:aux ~init:state
 
 let draw state =
@@ -158,20 +175,23 @@ let update_time state =
 
 let rec loop state =
   let env = env_of_state state in
+  let state, cmdss = resolve_pending_inits env state in
   (* Advancing sprites here may seem out of place. But this is done in order
    * to prevent freshly set animations to be affected. *)
   let state = advance_sprites state in
-  let state, cmds = dispatch_messages env state in
+  let state, cmdss = dispatch_messages env cmdss state in
   let state, obj_events = process_events state in
-  let state, cmds = react env obj_events cmds state in
-  let state, cmds = think env cmds state in
-  let state = process_commands cmds state in
+  let state, cmdss = react env obj_events cmdss state in
+  let state, cmdss = think env cmdss state in
+  let state = process_commands cmdss state in
   draw state;
   let state = update_time state in
   loop state
 
 let main () =
   at_exit quit;
-  loop (init ())
+  let save_filename = filename_concat ["data"; "saves"; "new.save"] in
+  let save = save_of_sexp (Sexp.load_sexp save_filename) in
+  loop (init ~save:save)
 
 let () = main ()
