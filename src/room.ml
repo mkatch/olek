@@ -51,7 +51,9 @@ let move_layer ~src ~dst room =
     let layers = room.layers
       |> list_rem src
       |> list_insert layer dst in
-    { room with layers }  
+    { room with layers }
+
+let rem_layer i room = { room with layers = list_rem i room.layers }
 
 let set_tileset name room = { room with tileset = Tileset.load name }
 
@@ -81,6 +83,11 @@ let map_selected_stub ~f room =
   match room.stubs with
   | [] -> room
   | stub :: stubs -> { room with stubs = f stub :: stubs }
+
+let rem_selected_stub room =
+  match room.stubs with
+  | [] -> room
+  | _ :: stubs -> { room with stubs }
 
 let draw_uniform_layer color = Canvas.clear color
 

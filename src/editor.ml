@@ -186,8 +186,8 @@ let mode_re = Str.regexp
   " *mode +\\(world\\|obj\\) *$"
 let mode_action text state =
   match Str.matched_group 1 text with
-  | " world" -> { state with mode = `World }
-  | " obj" -> { state with mode = `Obj }
+  | "world" -> { state with mode = `World }
+  | "obj" -> { state with mode = `Obj }
   | _ -> state
 
 let save_re = Str.regexp
@@ -237,6 +237,18 @@ let add_tiled_layer_action text state =
   let tiles_pos = state.tiles_pos + 1 in
   { state with room = Room.add_tiled_layer state.room; tiles_pos }
 
+let rem_layer_re = Str.regexp
+  " *rem +layer *$"
+let rem_layer_action text state =
+  if state.tiles_pos = state.active_layer then (
+    Terminal.show_error "Cannot remove phsical layer";
+    state )
+  else
+    if not (Terminal.confirm "Remove layer?") then state
+    else
+      let i = map_editor_to_room state state.active_layer in
+      { state with room = Room.rem_layer i state.room }
+
 let add_obj_re = Str.regexp
   " *add +obj +\\([a-z]+\\) *$"
 let add_obj_action text state =
@@ -284,17 +296,33 @@ let edit_init_action text state =
     aux (Sexp.to_string (Object.stub_init stub)) in
   { state with room = Room.map_selected_stub ~f:edit state.room }
 
+let rem_obj_re = Str.regexp
+  " *rem +obj *$"
+let rem_obj_action text state =
+  if state.mode <> `Obj then (
+    Terminal.show_error "Must be in 'obj' mode";
+    state ) else
+  if List.is_empty (Room.stubs state.room) then (
+    Terminal.show_error "No objects";
+    state ) else
+  if not (Terminal.confirm "Remove object?") then state
+  else { state with room = Room.rem_selected_stub state.room }
+
 let actions = [
   mode_re,              mode_action;
   new_re,               new_action;
   save_re,              save_action;
   load_re,              load_action;
+
   set_tileset_re,       set_tileset_action;
   add_uniform_layer_re, add_uniform_layer_action;
   add_tiled_layer_re,   add_tiled_layer_action;
+  rem_layer_re,         rem_layer_action;
+
   add_obj_re,           add_obj_action;
   set_name_re,          set_name_action;
   edit_init_re,         edit_init_action;
+  rem_obj_re,           rem_obj_action;
 ]
 
 let process_terminal_command text state =
