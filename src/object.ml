@@ -66,15 +66,21 @@ let react env events obj cmds =
       aux body state cmds events in
   aux obj.body I.state cmds events
 
-let receive env sender data obj cmds =
+let receive env msgs obj cmds =
   let (module I : Mind.INSTANCE) = obj.mind_instance in
-  let msg = I.Mind.msg_of_sexp data in
-  let chain = I.Mind.receive I.state obj.body env sender msg in
-  let state = Option.value (Cmd.get_state chain) ~default:I.state in
-  let body = Option.value (Cmd.get_body chain) ~default:obj.body in
-  let mind_instance = Mind.make_instance (module I.Mind) state in
-  let cmds = Cmd.get_cmds chain ~cmds:cmds in
-  ({ obj with body; mind_instance }, cmds)
+  let rec aux body state cmds msgs =
+    match msgs with
+    | [] ->
+      let mind_instance = Mind.make_instance (module I.Mind) state in
+      ({ obj with body; mind_instance }, cmds )
+    | (sender, data) :: msgs ->
+      let msg = I.Mind.msg_of_sexp data in
+      let chain = I.Mind.receive state body env sender msg in
+      let state = Option.value (Cmd.get_state chain) ~default:state in
+      let body = Option.value (Cmd.get_body chain) ~default:body in
+      let cmds = Cmd.get_cmds chain ~cmds:cmds in
+      aux body state cmds msgs in
+  aux obj.body I.state cmds msgs
 
 let advance_sprite t obj = { obj with body = Body.advance_sprite t obj.body }
 

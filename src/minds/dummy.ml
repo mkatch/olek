@@ -43,7 +43,10 @@ let think state body env =
 
 let react state body env event =
   let me = Env.handle env "olek" in
-  Cmd.send (sexp_of_msg "Heja banana!") me
+  let open Cmd in
+  send (sexp_of_msg "Heja banana!") me >>
+  send (sexp_of_msg "Nie ma takiego numeru") me >>
+  send (sexp_of_msg "") me
 
 let receive state body env sender msg =
   Cmd.print ("Message received: " ^ msg)

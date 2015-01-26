@@ -85,20 +85,28 @@ let resolve_pending_inits env state =
   ({ state with objs; pending_inits = [] }, cmdss)
 
 let dispatch_messages env cmdss state =
-  let rec aux msgs objs cmdss = match msgs, objs, cmdss with
+  let rec aux msgss objs cmdss = match msgss, objs, cmdss with
     | _, [], [] -> []
     | [], _, _ -> List.map2_exn ~f:(fun obj cmds -> (obj, cmds)) objs cmdss
-    | msg :: msgs', obj :: objs', cmds :: cmdss' ->
-      if msg.receiver = Object.handle obj then
-        Object.receive env msg.sender msg.data obj cmds
-        :: aux msgs' objs' cmdss'
+    | (receiver, msgs) :: msgss', obj :: objs', cmds :: cmdss' ->
+      if receiver = Object.handle obj then
+        Object.receive env msgs obj cmds :: aux msgss' objs' cmdss'
       else
-        (obj, cmds) :: aux msgs objs' cmdss'
-    | _, _, _ -> failwith "Game.dispatch_messages: Imposible case" in
-  let message_compare msg1 msg2 =
-    -(Env.Handle.compare msg1.receiver msg2.receiver) in
-  let msgs = List.sort ~cmp:message_compare state.messages in
-  let objs, cmdss = List.unzip (aux msgs state.objs cmdss) in
+        (obj, cmds) :: aux msgss objs' cmdss'
+    | _, _, _ -> failwith "Game.dispatch_messages.aux: Imposible case" in
+  let msg_compare msg1 msg2 = Env.Handle.compare msg1.receiver msg2.receiver in
+  let msg_break msg1 msg2 = msg1.receiver <> msg2.receiver in
+  let msg_split_group msgs = match msgs with
+    | [] -> failwith "Game.dispatch_message.msg_label: Impossible case"
+    | msg :: _ ->
+      let msgs = List.map ~f:(fun msg -> (msg.sender, msg.data)) msgs in
+      (msg.receiver, msgs) in
+  let msgss = state.messages
+              |> List.stable_sort ~cmp:msg_compare
+              |> List.rev
+              |> List.group ~break:msg_break
+              |> List.map ~f:msg_split_group in
+  let objs, cmdss = List.unzip (aux msgss state.objs cmdss) in
   ({ state with objs; messages = [] }, cmdss) 
 
 let advance_sprites state =
@@ -141,10 +149,10 @@ let process_command obj state cmd =
     let pos = Body.pos (Object.body obj) in
     { state with view = View.focus (v_to_ints pos) state.view }
 
-let process_commands cmds state =
+let process_commands cmdss state =
   let aux state obj cmds = List.fold ~f:(process_command obj) ~init:state
                                      (List.rev cmds) in
-  List.fold2_exn state.objs cmds ~f:aux ~init:state
+  List.fold2_exn state.objs cmdss ~f:aux ~init:state
 
 let draw state =
   Canvas.clear Sdlvideo.gray;
