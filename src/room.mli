@@ -8,8 +8,9 @@ type layer =
   | Image of image_layer
   | Tiled of int Grid.t
 
-val make : int -> int -> t
+val make : string -> int -> int -> t
 
+val name : t -> string
 val tiles : t -> Tile.t Grid.t
 val layers : t -> layer list
 val tileset : t -> Tileset.t
@@ -30,6 +31,7 @@ val add_tiled_layer : t -> t
 val move_layer : src:int -> dst:int -> t -> t
 val rem_layer : int -> t -> t
 
+val set_name : string -> t -> t
 val set_tileset : string -> t -> t
 
 val move_image_layer_by : int * int -> int -> t -> t

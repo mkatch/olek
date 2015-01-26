@@ -3,8 +3,10 @@ open Core.Std
 type t =
   | Message of Sexp.t * Env.handle
   | Spawn of string option * string * (int * int) * Sexp.t
+  | AlterContext of (Context.t -> Context.t)
   | Print of string
   | Focus
+  | Save
 
 type 's chain
 
@@ -26,5 +28,7 @@ val spawn : ?name:string
          -> ?init:Sexp.t
          -> string
          -> 's chain
+val alter_context : (Context.t -> Context.t) -> 's chain
 val print : string -> 's chain
 val focus : 's chain
+val save : 's chain

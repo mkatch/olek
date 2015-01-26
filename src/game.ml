@@ -63,6 +63,11 @@ let init ~save:save =
     pending_inits = stubs;
   }
 
+let save state =
+  let save = { room_name = Room.name state.room; context = state.context } in
+  let filename = filename_concat ["data"; "saves"; "contunue.save"] in
+  Sexp.save_hum filename (sexp_of_save save)
+
 let quit () =
   Sdl.quit ();
   Sdlttf.quit ()
@@ -118,7 +123,7 @@ let process_event event state =
   let open Sdlkey in
   match event with
   | QUIT
-  | KEYDOWN {keysym = KEY_ESCAPE} -> exit 0
+  | KEYDOWN {keysym = KEY_ESCAPE} -> save state; exit 0
   | _ -> state
 
 let process_events state =
@@ -139,12 +144,11 @@ let think env cmdss state =
   ({ state with objs }, cmdss)
 
 let process_command obj state cmd =
-  let open Cmd in
   match cmd with
-  | Message (data, receiver) ->
+  | Cmd.Message (data, receiver) ->
     let msg = { sender = Object.handle obj; receiver; data } in
     { state with messages = msg :: state.messages }
-  | Spawn (name, mind_name, pos, init) ->
+  | Cmd.Spawn (name, mind_name, pos, init) ->
     let mind = Mind.find_exn mind_name in
     let (module M : Mind.MIND) = mind in
     let init =
@@ -154,10 +158,12 @@ let process_command obj state cmd =
     let objs = Object.make stub :: state.objs in
     let pending_inits = stub :: state.pending_inits in
     { state with objs; pending_inits }
-  | Print text -> print_endline text; state
-  | Focus ->
+  | Cmd.AlterContext f -> { state with context = f (state.context) }
+  | Cmd.Print text -> print_endline text; state
+  | Cmd.Focus ->
     let pos = Body.pos (Object.body obj) in
     { state with view = View.focus (v_to_ints pos) state.view }
+  | Cmd.Save -> save state; state
 
 let process_commands cmdss state =
   let aux state obj cmds = List.fold ~f:(process_command obj) ~init:state

@@ -6,19 +6,20 @@ type image_layer = {
   offset: int * int;
   repeat: bool * bool;
   parallax: float;
-  name: string;
+  image_name: string;
 }
 
 let make_image_layer ~name ~offset ~repeat ~parallax =
   let filename = filename_concat ["data"; "backgrounds"; name ^ ".png"] in
-  { surface = Sdlloader.load_image filename; offset; repeat; parallax; name }
+  let surface = Sdlloader.load_image filename in
+  { surface; offset; repeat; parallax; image_name = name }
 
 let sexp_of_image_layer il =
   let open Sexp in
   let (ox, oy) = il.offset in
   let (rx, ry) = il.repeat in
   List [
-    List [Atom "name"; Atom il.name];
+    List [Atom "name"; Atom il.image_name];
     List [Atom "offset"; Atom (Int.to_string ox); Atom (Int.to_string ox)];
     List [Atom "repeat"; Atom (Bool.to_string rx); Atom (Bool.to_string ry)];
     List [Atom "parallax"; Atom (Float.to_string il.parallax)]
@@ -45,6 +46,7 @@ type layer =
 with sexp
 
 type t = {
+  name : string;
   tiles : Tile.t Grid.t;
   layers : layer list;
   tileset : Tileset.t;
@@ -52,13 +54,15 @@ type t = {
 }
 with sexp
 
-let make row_cnt column_cnt = {
+let make name row_cnt column_cnt = {
+  name = name;
   tiles = Grid.make Tile.Void row_cnt column_cnt;
   layers = [];
   tileset = Tileset.load "dummy";
   stubs = [];
 }
 
+let name room = room.name
 let tiles room = room.tiles
 let layers room = room.layers
 let tileset room = room.tileset
@@ -105,6 +109,7 @@ let move_layer ~src ~dst room =
 
 let rem_layer i room = { room with layers = list_rem i room.layers }
 
+let set_name name room = { room with name }
 let set_tileset name room = { room with tileset = Tileset.load name }
 
 let map_image_layer f layer room =

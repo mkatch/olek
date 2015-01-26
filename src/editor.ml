@@ -2,7 +2,6 @@ open Core.Std
 open Utils
 
 type state = {
-  name : string;
   room : Room.t;
   view : View.t;
   active_layer : int;
@@ -18,10 +17,9 @@ type state = {
 let window_width = 800
 let window_height = 600
 
-let make name room =
+let make room =
   let w, h = Room.dims_px room in
   {
-    name = name;
     room = room;
     view = View.make ((w, h) /^ 2);
     active_layer = 0;
@@ -35,7 +33,7 @@ let make name room =
   }
 
 let update_caption state =
-  Sdlwm.set_caption ~title:("Olek Editor: " ^ state.name) ~icon:""
+  Sdlwm.set_caption ~title:("Olek Editor: " ^ Room.name state.room) ~icon:""
 
 let init () =
   Sdl.init [`VIDEO];
@@ -43,7 +41,7 @@ let init () =
   Canvas.init ~w:window_width ~h:window_height;
   Sdlkey.enable_unicode true;
   Sdlkey.enable_key_repeat ();
-  let state = make "untitled" (Room.make 16 16) in
+  let state = make (Room.make "untitled" 16 16) in
   update_caption state; state
 
 let quit () =
@@ -189,7 +187,7 @@ let new_action text state =
              || Terminal.confirm ("Room '" ^ name ^ "' exists. Proceed?") in
   if not proceed then state
   else
-    let state = make name (Room.make row_cnt column_cnt) in
+    let state = make (Room.make name row_cnt column_cnt) in
     update_caption state;
     state
 
@@ -204,12 +202,14 @@ let mode_action text state =
 let save_re = Str.regexp
   " *save *\\([a-z]+\\)? *$"
 let save_action text state =
-  let name = try Str.matched_group 1 text with Not_found -> state.name in
+  let name =
+    try Str.matched_group 1 text
+    with Not_found -> Room.name state.room in
   let filename = filename_concat ["data"; "rooms"; name ^ ".room"] in
   let do_save = Sys.file_exists filename = `No
              || Terminal.confirm ("Overwrite '" ^ name ^ "'?") in
   if not do_save then state else
-  let state = { state with name } in
+  let state = { state with room = Room.set_name name state.room } in
   Sexp.save_hum filename (Room.sexp_of_t state.room);
   update_caption state;
   Terminal.show ("Saved '" ^ name ^ "'");
@@ -222,7 +222,7 @@ let load_action text state =
   let filename = filename_concat ["data"; "rooms"; name ^ ".room"] in
   try
     let room = Room.t_of_sexp (Sexp.load_sexp filename) in
-    let state = make name room in
+    let state = make room in
     update_caption state;
     state
   with _ -> Terminal.show_error ("Unable to load room '" ^ name ^ "'"); state

@@ -4,8 +4,10 @@ open Utils
 type t =
   | Message of Sexp.t * Env.handle
   | Spawn of string option * string * (int * int) * Sexp.t
+  | AlterContext of (Context.t -> Context.t)
   | Print of string
   | Focus
+  | Save
 
 type 's chain =
   | Nop
@@ -58,6 +60,10 @@ let spawn ?name:(name = "")
   let name = if name = "" then None else Some name in
   Command (Spawn (name, mind_name, v_to_ints pos, init))
 
+let alter_context f = Command (AlterContext f)
+
 let print text = Command (Print text)
 
 let focus = Command Focus
+
+let save = Command Save
