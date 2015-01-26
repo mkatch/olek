@@ -2,6 +2,7 @@ open Core.Std
 
 type t =
   | Message of Sexp.t * Env.handle
+  | Spawn of string option * string * (int * int) * Sexp.t
   | Print of string
   | Focus
 
@@ -20,5 +21,10 @@ val set_body : Body.t -> 's chain
 val set : 's -> Body.t -> 's chain
 
 val send : Sexp.t -> Env.handle -> 's chain
+val spawn : ?name:string
+         -> ?pos:float * float
+         -> ?init:Sexp.t
+         -> string
+         -> 's chain
 val print : string -> 's chain
 val focus : 's chain

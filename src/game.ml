@@ -144,6 +144,16 @@ let process_command obj state cmd =
   | Message (data, receiver) ->
     let msg = { sender = Object.handle obj; receiver; data } in
     { state with messages = msg :: state.messages }
+  | Spawn (name, mind_name, pos, init) ->
+    let mind = Mind.find_exn mind_name in
+    let (module M : Mind.MIND) = mind in
+    let init =
+      if init = Sexp.unit then M.sexp_of_init M.default_init
+      else init in
+    let stub = Object.make_stub ~name:name ~mind:mind ~pos:pos ~init:init in
+    let objs = Object.make stub :: state.objs in
+    let pending_inits = stub :: state.pending_inits in
+    { state with objs; pending_inits }
   | Print text -> print_endline text; state
   | Focus ->
     let pos = Body.pos (Object.body obj) in

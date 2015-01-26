@@ -1,7 +1,9 @@
 open Core.Std
+open Utils
 
 type t =
   | Message of Sexp.t * Env.handle
+  | Spawn of string option * string * (int * int) * Sexp.t
   | Print of string
   | Focus
 
@@ -48,6 +50,13 @@ let set_body body = SetBody body
 let set state body = SetState state >> SetBody body
 
 let send msg receiver = Command (Message (msg, receiver))
+
+let spawn ?name:(name = "")
+          ?pos:(pos = (0., 0.))
+          ?init:(init = Sexp.unit)
+          mind_name =
+  let name = if name = "" then None else Some name in
+  Command (Spawn (name, mind_name, v_to_ints pos, init))
 
 let print text = Command (Print text)
 
