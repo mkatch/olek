@@ -327,7 +327,7 @@ let actions = [
 
 let process_terminal_command text state =
   let rec aux = function
-    | [] -> state
+    | [] -> Terminal.show_error "Unknown command"; state
     | (re, action) :: actions ->
       if Str.string_match re text 0 then action text state
       else aux actions in
