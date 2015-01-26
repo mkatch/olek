@@ -43,4 +43,4 @@ val map_selected_stub : f:(Object.stub -> Object.stub) -> t -> t
 val rem_selected_stub : t -> t
 
 val draw : View.t -> ?draw_frame:bool -> ?draw_tiles:bool -> ?draw_stubs:bool
-  -> ?draw_stub_frames:bool -> t -> unit
+  -> ?draw_stub_frames:bool -> ?only:int -> t -> unit

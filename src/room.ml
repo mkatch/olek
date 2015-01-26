@@ -234,8 +234,13 @@ let draw view
          ?draw_tiles:(d_tiles = false)
          ?draw_stubs:(d_stubs = false)
          ?draw_stub_frames:(d_stub_frames = false)
+         ?only:(only = -2)
          room =
-  List.iter ~f:(draw_layer view room.tileset) room.layers;
+  if only >= 0 then
+    let layer = List.nth_exn room.layers only in
+    draw_layer view room.tileset layer else
+  if only <> -1 then
+    List.iter ~f:(draw_layer view room.tileset) room.layers;
   if d_frame then draw_frame view room;
-  if d_tiles then draw_tiles view room.tiles;
+  if d_tiles && only < 0 then draw_tiles view room.tiles;
   if d_stubs then draw_stubs view room.stubs ~draw_frames:d_stub_frames

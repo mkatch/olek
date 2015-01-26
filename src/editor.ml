@@ -11,6 +11,8 @@ type state = {
   tiles_pos : int;
   mode : [`World | `Obj];
   dragging : [`DraggingWorld | `DraggingObj | `DraggingImage | `NoDragging];
+  draw_tiles : bool;
+  draw_exclusive : bool;
 }
 
 let window_width = 800
@@ -28,6 +30,8 @@ let make name room =
     tiles_pos = 0;
     mode = `World;
     dragging = `NoDragging;
+    draw_tiles = true;
+    draw_exclusive = false;
   }
 
 let update_caption state =
@@ -113,10 +117,15 @@ let draw_stamp state =
   View.blit state.view ~pos:hover_tile_pos ~src_rect:src_rect src
 
 let draw state =
+  let only =
+    if state.draw_exclusive then map_editor_to_room state state.active_layer
+    else (-2) in 
   Canvas.clear Sdlvideo.gray;
-  Room.draw state.view state.room ~draw_frame:true ~draw_stubs:true
+  Room.draw state.view state.room ~draw_frame:true
+    ~draw_stubs:(not state.draw_exclusive)
     ~draw_tiles:(state.mode = `World)
-    ~draw_stub_frames:(state.mode = `Obj);
+    ~draw_stub_frames:(state.mode = `Obj)
+    ~only:only;
   draw_stamp state;
   draw_hud state;
   Canvas.flip ()
@@ -433,6 +442,8 @@ let rec loop ?redraw:(redraw = true) state =
   | MOUSEBUTTONUP { mbe_button = BUTTON_LEFT }
   | KEYUP { keysym = KEY_SPACE } ->
     loop { state with dragging = `NoDragging } ~redraw:false
+  | KEYDOWN { keysym = KEY_e } -> loop { state with draw_exclusive = true }
+  | KEYUP { keysym = KEY_e } -> loop { state with draw_exclusive = false }
   | _ -> loop state ~redraw:false
 
 let main () =
