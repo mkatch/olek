@@ -5,9 +5,9 @@ open Sdlkey
 let name = "olek"
 
 type state = {
-  vel: float * float;
-  dir: [`Left | `Right];
-  mode: [`Ground | `Air];
+  vel : float * float;
+  dir : [`Left | `Right];
+  mode : [`Ground | `Air];
 }
 
 type init = unit with sexp
@@ -22,7 +22,7 @@ let run_left_sheet =
 let run_right_sheet =
   Sprite.make_sheet ~image:"olek_run_right" ~frames:8 ~dt:60 ~origin:(20, 12)
 
-let default_body = Body.(make 0. 0. 12 16 |> set_sprite ~force:true still_right_sheet) 
+let default_body = Body.(make 0. 0. 12 16 |> set_sprite still_right_sheet) 
 let default_state = {
   vel = (0., 0.);
   dir = `Right;

@@ -40,6 +40,10 @@ let advance t sprite =
   let frames = sprite.sheet.frames in
   if frames <= 1 then sprite else
   let prev_t = sprite.t in
+  (* This check is needed for sprites that were initialized with incorrect
+   * time as they may never recover if it's big. This actually happens when
+   * SDL is not initialized and Sdltimer.get_ticks may give a huge number *)
+  let sprite = if t < prev_t then { sprite with t } else sprite in
   let dt = sprite.sheet.dt in
   let dframe = (t - prev_t) / dt in
   if (dframe <= 0) then sprite else

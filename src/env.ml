@@ -3,6 +3,7 @@ open Utils
 
 module Handle = struct
   type t = int with sexp
+  let nil = -1
   let compare = Int.compare
 end
 

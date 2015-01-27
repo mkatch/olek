@@ -36,6 +36,7 @@ include Minds
 
 let mind_list = [
   (module Olek : MIND);
+  (module Blob : MIND);
   (module Dummy : MIND);
 ]
 let minds =

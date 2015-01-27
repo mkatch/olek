@@ -16,6 +16,11 @@ let ( -.^ ) (x1, y1) (x2, y2) = (x1 -. x2, y1 -. y2)
 let ( *.^ ) a (x, y) = (a *. x, a *. y)
 let ( /.^ ) (x, y) a = (x /. a, y /. a)
 
+let len_sq (x, y) = x *. x +. y *. y
+let len v = sqrt (len_sq v)
+let dist_sq u v = len_sq (u -.^ v)
+let dist u v = len (u -.^ v)
+
 let dot (x0, y0) (x1, y1) = x0 *. x1 +. y0 *. y1
 let per (x0, y0) (x1, y1) = y0 *. x1 -. x0 *. y1
 
