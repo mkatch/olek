@@ -36,3 +36,29 @@ let of_int = function
   | 1 -> TopSolid
   | 2 -> Sticky
   | _ -> Void
+
+let is_solid = function
+  | Solid
+  | Sticky -> true
+  | _ -> false
+
+let is_l_solid = function
+  | Solid
+  | Sticky -> true
+  | _ -> false
+
+let is_t_solid = function
+  | Solid
+  | TopSolid
+  | Sticky -> true
+  | _ -> false
+
+let is_r_solid = function
+  | Solid
+  | Sticky -> true
+  | _ -> false
+
+let is_b_solid = function
+  | Solid
+  | Sticky -> true
+  | _ -> false

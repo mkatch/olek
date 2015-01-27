@@ -38,8 +38,13 @@ let move_by (dx, dy) body = { body with x = body.x +. dx; y = body.y +. dy }
 let set_w w body = { body with w }
 let set_h h body = { body with h }
 let set_dims (w, h) body = { body with w; h }
-let set_sprite sheet body = { body with sprite = Sprite.make sheet }
+
+let set_sprite sheet ?force:(force = false) body =
+  if force || not (phys_equal (Sprite.sheet body.sprite) sheet)
+  then { body with sprite = Sprite.make sheet }
+  else body 
 
 let advance_sprite t body = { body with sprite = Sprite.advance t body.sprite }
 
-let draw view body = Sprite.draw view (v_to_ints (pos body)) body.sprite
+let draw view body = Sprite.draw view (v_to_ints (pos body)) body.sprite;
+  View.draw_rect view Sdlvideo.red (rect body)

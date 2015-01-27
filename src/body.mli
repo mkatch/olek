@@ -29,7 +29,7 @@ val move_by : float * float -> t -> t
 val set_w : int -> t -> t
 val set_h : int -> t -> t
 val set_dims : int * int -> t -> t
-val set_sprite : Sprite.sheet -> t -> t
+val set_sprite : Sprite.sheet -> ?force:bool -> t -> t
 
 val advance_sprite : int -> t -> t
 

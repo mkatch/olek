@@ -10,14 +10,14 @@ type 'a t = {
 with sexp
 
 let row_cnt g = g.rows
-
 let column_cnt g = g.cols
-
 let dims g = (g.rows, g.cols)
 
 let make x rows cols =
   let array = Array.init (rows * cols) ~f:(fun _ -> x) in
   { array; rows; cols; }
+
+let are_coords_valid i j g = 0 <= i && i < g.rows && 0 <= j && j < g.cols
 
 let ind i j g = i * g.cols + j
 

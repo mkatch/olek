@@ -35,6 +35,7 @@ type instance = (module INSTANCE)
 include Minds
 
 let mind_list = [
+  (module Olek : MIND);
   (module Dummy : MIND);
 ]
 let minds =

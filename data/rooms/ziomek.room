@@ -196,4 +196,4 @@
        -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1))
      (rows 40) (cols 40)))))
  (tileset spring)
- (stubs (((obj_name (olek)) (mind dummy) (pos (374 165)) (init ())))))
+ (stubs (((obj_name ()) (mind olek) (pos (264 313)) (init ())))))

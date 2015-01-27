@@ -28,3 +28,5 @@ val handle : t -> string -> handle
 val body : t -> handle -> Body.t
 
 val named_body : t -> string -> Body.t
+
+val collide : t -> Body.t -> float * float -> float * float * float * float
