@@ -23,6 +23,11 @@ let ind i j g = i * g.cols + j
 
 let get i j g = Array.get g.array (ind i j g)
 
+let get_safe i j ~default g =
+  if are_coords_valid i j g
+  then get i j g
+  else default 
+
 let set i j x g = Array.set g.array (ind i j g) x; g 
 
 let of_lists xss =

@@ -45,19 +45,49 @@ let new_handle () =
   next_handle := !next_handle + 1;
   handle
 
-let tile_coords_at (x, y) =
-  let aux z =
-    if z < 0.
-    then Int.of_float z / Tile.size - 1
-    else Int.of_float z / Tile.size in
-  (aux y, aux x)
+let handle env name = fst (StringMap.find_exn env.named_bodies name)
+let body env handle = HandleMap.find_exn env.bodies handle
+let named_body env name = snd (StringMap.find_exn env.named_bodies name)
 
-let tile_at pos env =
-  let (i, j) = tile_coords_at pos in
-  if Grid.are_coords_valid i j env.tiles
-  then Grid.get i j env.tiles
-  else Tile.Void
+let to_grid z = Int.of_float (Float.round_down (z /. Float.of_int Tile.size))
+let to_grid_inclusive z =
+  Int.of_float (Float.round_up (z /. Float.of_int Tile.size)) - 1
+let to_grid2 (x, y) = (to_grid y, to_grid x)
+let to_grid2_inclusive (x, y) = (to_grid_inclusive y, to_grid_inclusive x)
 
+let tile (i, j) env = Grid.get_safe i j env.tiles ~default:Tile.Void
+let tile_at pos env = tile (to_grid2 pos) env
+let tile_at_inclusive pos env = tile (to_grid2 pos) env
+
+let has_foundation env body =
+  let (l, b, r) = Body.(l body, b body, r body) in
+  let (j0, i, j1) = (to_grid l, to_grid b, to_grid r) in
+  let js = List.range ~stop:`inclusive j0 j1 in
+  list_any ~f:(fun j -> Tile.is_t_solid (tile (i, j) env)) js
+
+let leaning_left env body =
+  let (t, l, b) = Body.(t body, l body, b body) in
+  let (i0, j, i1) = (to_grid t, to_grid_inclusive l, to_grid_inclusive b) in
+  let is = List.range ~stop:`inclusive i0 i1 in
+  list_any ~f:(fun i -> Tile.is_r_solid (tile (i, j) env)) is
+
+let leaning_right env body =
+  let (t, r, b) = Body.(t body, r body, b body) in
+  let (i0, j, i1) = (to_grid t, to_grid r, to_grid_inclusive b) in
+  let is = List.range ~stop:`inclusive i0 i1 in
+  list_any ~f:(fun i -> Tile.is_l_solid (tile (i, j) env)) is
+
+let penetr_left l =
+  let j = to_grid_inclusive l in
+  let r = Float.of_int ((j + 1) * Tile.size) in
+  r -. l
+
+let penetr_right r =
+  let j = to_grid r in
+  let l = Float.of_int (j * Tile.size) in
+  r -. l
+
+(* This is not perfect but works and I have no time for this stuff any more! *)
 let l_of_x x =
   if x < 0. 
   then Float.of_int ((Int.of_float x / Tile.size - 1) * Tile.size)
@@ -65,19 +95,10 @@ let l_of_x x =
 let r_of_x x = l_of_x x +. Float.of_int Tile.size
 let t_of_y = l_of_x
 let b_of_y = r_of_x
-
 let penetr_l x = x -. l_of_x x
 let penetr_t y = y -. t_of_y y
 let penetr_r x = r_of_x x -. x
 let penetr_b y = b_of_y y -. y
-
-let handle env name = fst (StringMap.find_exn env.named_bodies name)
-
-let body env handle = HandleMap.find_exn env.bodies handle
-
-let named_body env name = snd (StringMap.find_exn env.named_bodies name)
-
-(* This is so freakin insane! *)
 let collide env body ((vel_x, vel_y) as vel) =
   let (l, t, r, b) = Body.(l body, t body, r body, b body) in
   let (pl, pt, pr, pb) = (penetr_r l, penetr_b t, penetr_l r, penetr_t b) in

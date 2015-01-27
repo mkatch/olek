@@ -20,13 +20,18 @@ val dt : t -> float
 val context : t -> Context.t
 
 val new_handle : unit -> handle
-
-val tile_at : float * float -> t -> Tile.t
-
 val handle : t -> string -> handle
-
 val body : t -> handle -> Body.t
-
 val named_body : t -> string -> Body.t
+
+val tile : int * int -> t -> Tile.t
+val tile_at : float * float -> t -> Tile.t
+val tile_at_inclusive : float * float -> t -> Tile.t
+
+val has_foundation : t -> Body.t -> bool
+val leaning_left : t -> Body.t -> bool
+val leaning_right : t -> Body.t -> bool
+val penetr_left : float -> float
+val penetr_right : float -> float
 
 val collide : t -> Body.t -> float * float -> float * float * float * float

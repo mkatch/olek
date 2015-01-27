@@ -36,6 +36,10 @@ let list_insert x i xs =
   let h, t = List.split_n xs i in
   h @ (x :: t)
 
+let rec list_any ~f = function
+  | [] -> false
+  | x :: xs -> f x || list_any f xs
+
 let actual_mod a b =
   let b = abs b in
   if a >= 0 then a mod b

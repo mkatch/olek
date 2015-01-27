@@ -11,6 +11,7 @@ val are_coords_valid : int -> int -> 'a t -> bool
 val of_lists : 'a list list -> 'a t
 
 val get : int -> int -> 'a t -> 'a
+val get_safe : int -> int -> default:'a -> 'a t -> 'a
 
 val set : int -> int -> 'a -> 'a t -> 'a t
 
