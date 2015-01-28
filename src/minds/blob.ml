@@ -35,16 +35,14 @@ let handle_encounter state body env =
   let olek_body = Env.body env state.olek in
   if Body.intersect body olek_body then
     let (x, y) = span (Body.pos olek_body) (Body.pos body) in
-    if y > Float.abs x then
+    if y > 2.0 *. Float.abs x then
       let dy = Body.t body -. Body.b olek_body in 
       let msg = Olek.sexp_of_msg (Olek.Bounce dy) in
       send msg state.olek >>
       set_state { state with die_t = Env.t env +. 1.0 } >>
       set_body (Body.set_sprite die_sheet body)
-    else
-      nop
-  else
-    nop
+    else send (Olek.sexp_of_msg Olek.Die) state.olek
+  else nop
 
 let think state body env =
   let open Cmd in

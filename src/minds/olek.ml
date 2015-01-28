@@ -7,14 +7,15 @@ let name = "olek"
 type state = {
   vel : float * float;
   dir : [`Left | `Right];
-  mode : [`Ground | `Air];
+  mode : [`Ground | `Air | `Die];
+  die_t : float;
 }
 
 type init = unit with sexp
 
 type msg =
   | Bounce of float
-  | Die of (float * float)
+  | Die
 with sexp
 
 let still_left_sheet =
@@ -25,12 +26,17 @@ let run_left_sheet =
   Sprite.make_sheet ~image:"olek_run_left" ~frames:8 ~dt:60 ~origin:(9, 12)
 let run_right_sheet =
   Sprite.make_sheet ~image:"olek_run_right" ~frames:8 ~dt:60 ~origin:(20, 12)
+let die_left_sheet =
+  Sprite.make_sheet ~image:"olek_die_left" ~frames:1 ~dt:0 ~origin:(6, 8)
+let die_right_sheet =
+  Sprite.make_sheet ~image:"olek_die_right" ~frames:1 ~dt:0 ~origin:(10, 8)
 
 let default_body = Body.(make 0. 0. 12 16 |> set_sprite still_right_sheet) 
 let default_state = {
   vel = (0., 0.);
   dir = `Right;
   mode = `Ground;
+  die_t = -1.0;
 }
 let default_init = ()
 
@@ -43,23 +49,30 @@ let max_vel_y = 200.0
 
 let float_of_ks k = if is_key_pressed k then 1. else 0.
 
-let determine_sprite (vel_x, vel_y) dir =
-  if vel_x < -3.0 then run_left_sheet else
-  if 3.0 < vel_x then run_right_sheet else
-  if dir = `Left then still_left_sheet
-  else still_right_sheet
+let determine_sprite (vel_x, vel_y) dir mode =
+  match mode with
+  | `Ground ->
+    if vel_x < -3.0 then run_left_sheet else
+    if 3.0 < vel_x then run_right_sheet else
+    if dir = `Left then still_left_sheet
+    else still_right_sheet
+  | `Air
+  | `Die -> if dir = `Left then die_left_sheet else die_right_sheet
 
 let init state body env init = Cmd.nop
 
-let determine_vel_x vel_x dt =
-  let dir_x = float_of_ks KEY_RIGHT -. float_of_ks KEY_LEFT in
-  if dir_x <> 0. then
-    let acc_x = acc_x *. dir_x in
-    clamp ~min:(-.max_vel_x) ~max:max_vel_x (vel_x +. dt *. acc_x) else
-  if vel_x <= 0. then
-    clamp ~min:(-.max_vel_x) ~max:0. (vel_x +. dt *. drag_x)
-  else
-    clamp ~min:0. ~max:max_vel_x (vel_x +. dt *. (-.drag_x))
+let determine_vel_x vel_x dt mode =
+  match mode with
+  | `Die -> vel_x
+  | `Ground | `Air ->
+    let dir_x = float_of_ks KEY_RIGHT -. float_of_ks KEY_LEFT in
+    if dir_x <> 0. then
+      let acc_x = acc_x *. dir_x in
+      clamp ~min:(-.max_vel_x) ~max:max_vel_x (vel_x +. dt *. acc_x) else
+    if vel_x <= 0. then
+      clamp ~min:(-.max_vel_x) ~max:0. (vel_x +. dt *. drag_x)
+    else
+      clamp ~min:0. ~max:max_vel_x (vel_x +. dt *. (-.drag_x))
 
 let determine_vel_y vel_y dt mode =
   match mode with
@@ -67,6 +80,7 @@ let determine_vel_y vel_y dt mode =
   | `Air ->
     let grav_y = if is_key_pressed KEY_SPACE then 0.7 *. grav_y else grav_y in
     clamp ~min:(-.max_vel_y) ~max:max_vel_y (vel_y +. dt *. grav_y)
+  | `Die -> clamp ~min:(-.max_vel_y) ~max:max_vel_y (vel_y +. dt *. grav_y)
 
 let handle_collisions state body env =
   let open Cmd in
@@ -89,17 +103,24 @@ let handle_collisions state body env =
     set_body (Body.move_by (pl -. pr, pt -. pb) body) >>
     if pb > 0. then set_state { state with mode = `Ground; vel = (vel_x, 0.) }
     else nop
+  | `Die -> nop
 
 let think state body env =
+  let open Cmd in
   let dt = Env.dt env in
-  let vel_x = determine_vel_x (vx state.vel) dt in
+  let t = Env.t env in
+  if state.mode = `Die && state.die_t <= t then
+    set_state default_state >>
+    set_body default_body >>
+    init default_state default_body env default_init
+  else
+  let vel_x = determine_vel_x (vx state.vel) dt state.mode in
   let vel_y = determine_vel_y (vy state.vel) dt state.mode in
   let vel = (vel_x, vel_y) in
   let state = { state with vel } in
   let body = body
              |> Body.move_by (dt *.^ vel)
-             |> Body.set_sprite (determine_sprite vel state.dir) in
-  let open Cmd in
+             |> Body.set_sprite (determine_sprite vel state.dir state.mode) in
   set_state state >>
   set_body body >>
   handle_collisions state body env >>
@@ -107,6 +128,7 @@ let think state body env =
 
 let react state body env event =
   let open Cmd in
+  if state.mode = `Die then nop else
   let open Objevent in
   match event with
   | KeyDown KEY_LEFT -> set_state { state with dir = `Left }
@@ -118,10 +140,16 @@ let react state body env event =
 
 let receive state body env sender msg =
   let open Cmd in
+  if state.mode = `Die then nop else
   match msg with
   | Bounce dy ->
     let (vel_x, _) = state.vel in
     let vel = (vel_x, jump_vel_y) in
     set_state { state with vel; mode = `Air } >>
     set_body (Body.move_by (0., dy) body)
-  | Die origin -> nop
+  | Die -> set_state {
+      vel = ((-0.5) *. (vx state.vel), jump_vel_y);
+      mode = `Die;
+      dir = if state.dir = `Left then `Right else `Left;
+      die_t = Env.t env +. 1.0;
+    }
