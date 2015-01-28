@@ -90,15 +90,6 @@ let resolve_pending_inits env state =
   ({ state with objs; pending_inits = [] }, cmdss)
 
 let dispatch_messages env cmdss state =
-  let rec aux msgss objs cmdss = match msgss, objs, cmdss with
-    | _, [], [] -> []
-    | [], _, _ -> List.map2_exn ~f:(fun obj cmds -> (obj, cmds)) objs cmdss
-    | (receiver, msgs) :: msgss', obj :: objs', cmds :: cmdss' ->
-      if receiver = Object.handle obj then
-        Object.receive env msgs obj cmds :: aux msgss' objs' cmdss'
-      else
-        (obj, cmds) :: aux msgss objs' cmdss'
-    | _, _, _ -> failwith "Game.dispatch_messages.aux: Imposible case" in
   let msg_compare msg1 msg2 = Env.Handle.compare msg1.receiver msg2.receiver in
   let msg_break msg1 msg2 = msg1.receiver <> msg2.receiver in
   let msg_split_group msgs = match msgs with
@@ -106,6 +97,15 @@ let dispatch_messages env cmdss state =
     | msg :: _ ->
       let msgs = List.map ~f:(fun msg -> (msg.sender, msg.data)) msgs in
       (msg.receiver, msgs) in
+  let rec aux msgss objs cmdss = match msgss, objs, cmdss with
+    | _, [], [] -> []
+    | [], _, _ -> List.map2_exn ~f:(fun obj cmds -> (obj, cmds)) objs cmdss
+    | (receiver, msgs) :: msgss', obj :: objs', cmds :: cmdss' -> (
+      match Env.Handle.compare receiver (Object.handle obj) with
+      | 0 -> Object.receive env msgs obj cmds :: aux msgss' objs' cmdss'
+      | 1 -> (obj, cmds) :: aux msgss objs' cmdss'
+      | _ -> (obj, cmds) :: aux msgss' objs' cmdss' )
+    | _, _, _ -> failwith "Game.dispatch_messages.aux: Imposible case" in
   let msgss = state.messages
               |> List.stable_sort ~cmp:msg_compare
               |> List.rev
@@ -158,6 +158,15 @@ let process_command obj state cmd =
     let objs = Object.make stub :: state.objs in
     let pending_inits = stub :: state.pending_inits in
     { state with objs; pending_inits }
+  | Cmd.Remove handle -> (* TODO: This may not be most effective *)
+    let objs = List.filter ~f:(fun obj -> Object.handle obj <> handle)
+                           state.objs in
+    { state with objs }
+  | Cmd.RemoveMe -> (* TODO: This may not be most effective *)
+    let handle = Object.handle obj in
+    let objs = List.filter ~f:(fun obj -> Object.handle obj <> handle)
+                           state.objs in
+    { state with objs }
   | Cmd.AlterContext f -> { state with context = f (state.context) }
   | Cmd.Print text -> print_endline text; state
   | Cmd.Focus ->

@@ -3,6 +3,8 @@ open Core.Std
 type t =
   | Message of Sexp.t * Env.handle
   | Spawn of string option * string * (int * int) * Sexp.t
+  | Remove of Env.handle
+  | RemoveMe
   | AlterContext of (Context.t -> Context.t)
   | Print of string
   | Focus
@@ -28,6 +30,8 @@ val spawn : ?name:string
          -> ?init:Sexp.t
          -> string
          -> 's chain
+val remove : Env.handle -> 's chain
+val remove_me : 's chain
 val alter_context : (Context.t -> Context.t) -> 's chain
 val print : string -> 's chain
 val focus : 's chain

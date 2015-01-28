@@ -11,7 +11,11 @@ type state = {
 }
 
 type init = unit with sexp
-type msg = unit with sexp
+
+type msg =
+  | Bounce of float
+  | Die of (float * float)
+with sexp
 
 let still_left_sheet =
   Sprite.make_sheet ~image:"olek_idle_left" ~frames:1 ~dt:0 ~origin:(9, 9)
@@ -112,4 +116,12 @@ let react state body env event =
     set_state { state with vel = (vel_x, jump_vel_y); mode = `Air }
   | _ -> nop
 
-let receive state body env sender msg = Cmd.nop
+let receive state body env sender msg =
+  let open Cmd in
+  match msg with
+  | Bounce dy ->
+    let (vel_x, _) = state.vel in
+    let vel = (vel_x, jump_vel_y) in
+    set_state { state with vel; mode = `Air } >>
+    set_body (Body.move_by (0., dy) body)
+  | Die origin -> nop

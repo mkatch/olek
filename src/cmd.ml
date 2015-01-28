@@ -4,6 +4,8 @@ open Utils
 type t =
   | Message of Sexp.t * Env.handle
   | Spawn of string option * string * (int * int) * Sexp.t
+  | Remove of Env.handle
+  | RemoveMe
   | AlterContext of (Context.t -> Context.t)
   | Print of string
   | Focus
@@ -59,6 +61,10 @@ let spawn ?name:(name = "")
           mind_name =
   let name = if name = "" then None else Some name in
   Command (Spawn (name, mind_name, v_to_ints pos, init))
+
+let remove handle = Command (Remove handle)
+let remove_me = Command RemoveMe
+
 
 let alter_context f = Command (AlterContext f)
 

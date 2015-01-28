@@ -33,4 +33,6 @@ val set_sprite : Sprite.sheet -> ?force:bool -> t -> t
 
 val advance_sprite : int -> t -> t
 
+val intersect : t -> t -> bool
+
 val draw : View.t -> t -> unit

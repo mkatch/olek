@@ -29,7 +29,9 @@ let rt body = (r body, t body)
 let rb body = (r body, b body)
 let lb body = (l body, b body)
 let sprite body = body.sprite
-let rect body = let (x, y) = v_to_ints (lt body) in Sdlvideo.rect x y body.w body.h
+let rect body =
+  let (x, y) = v_to_ints (lt body) in
+  Sdlvideo.rect x y body.w body.h
 
 let set_x x body = { body with x }
 let set_y y body = { body with y }
@@ -45,6 +47,10 @@ let set_sprite sheet ?force:(force = false) body =
   else body 
 
 let advance_sprite t body = { body with sprite = Sprite.advance t body.sprite }
+
+let intersect body1 body2 =
+  l body2 <= r body1 && l body1 <= r body2 &&
+  t body2 <= b body1 && t body1 <= b body2
 
 let draw view body = Sprite.draw view (v_to_ints (pos body)) body.sprite;
   View.draw_rect view Sdlvideo.red (rect body)
