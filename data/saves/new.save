@@ -1,4 +1,4 @@
 ((room_name ziomek)
   (context (
-    (spawn_point yomama)
+    (spawn_point "")
   )))

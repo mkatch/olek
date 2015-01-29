@@ -43,6 +43,7 @@ let init env stub obj =
   ({ obj with body; mind_instance }, cmds)
 
 let think env obj cmds =
+  let env = Env.set_user obj.handle obj.name env in
   let (module I : Mind.INSTANCE) = obj.mind_instance in
   let chain = I.Mind.think I.state obj.body env in
   let state = Option.value (Cmd.get_state chain) ~default:I.state in
@@ -52,6 +53,7 @@ let think env obj cmds =
   ({ obj with body; mind_instance }, cmds)
 
 let react env events obj cmds =
+  let env = Env.set_user obj.handle obj.name env in
   let (module I : Mind.INSTANCE) = obj.mind_instance in
   let rec aux body state cmds events =
     match events with
@@ -67,6 +69,7 @@ let react env events obj cmds =
   aux obj.body I.state cmds events
 
 let receive env msgs obj cmds =
+  let env = Env.set_user obj.handle obj.name env in
   let (module I : Mind.INSTANCE) = obj.mind_instance in
   let rec aux body state cmds msgs =
     match msgs with

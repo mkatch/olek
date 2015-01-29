@@ -12,10 +12,10 @@ type state = {
 type init = unit with sexp
 type msg = unit with sexp
 
-let sheet =
-  Sprite.make_sheet ~image:"blob" ~frames:4 ~dt:150 ~origin:(10, 7)
-let die_sheet =
-  Sprite.make_sheet ~image:"blob_die" ~frames:1 ~dt:0 ~origin:(11, -1)
+let sheet = Sprite.make_sheet
+  ~image:"blob" ~frames:4 ~dt:150 ~origin:(10, 7)
+let die_sheet = Sprite.make_sheet
+  ~image:"blob_die" ~frames:1 ~dt:0 ~origin:(11, -1)
 
 let default_body = Body.(make 0. 0. 20 14 |> set_sprite sheet)
 let default_state = {

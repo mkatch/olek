@@ -20,6 +20,11 @@ val t : t -> float
 val dt : t -> float
 val context : t -> Context.t
 
+val set_user : handle -> string option -> t -> t
+val my_handle : t -> handle
+val my_name : t -> string option
+val my_name_exn : t -> string
+
 val new_handle : unit -> handle
 val handle : t -> string -> handle
 val body : t -> handle -> Body.t

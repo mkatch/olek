@@ -11,6 +11,11 @@ module HandleMap = Map.Make(Handle)
 
 type handle = Handle.t
 
+type user = {
+  handle : handle;
+  name : string option;
+}
+
 type t = {
   t : float;
   dt : float;
@@ -18,11 +23,8 @@ type t = {
   tiles : Tile.t Grid.t;
   named_bodies : (handle * Body.t) StringMap.t;
   bodies : Body.t HandleMap.t;
+  user : user;
 }
-
-let t env = env.t
-let dt env = env.dt
-let context env = env.context
 
 let make ~t_ms ~dt_ms ~context ~tiles ~objs =
   let rec filter_named = function
@@ -38,7 +40,17 @@ let make ~t_ms ~dt_ms ~context ~tiles ~objs =
     tiles = tiles;
     named_bodies = StringMap.of_alist_exn (filter_named objs);
     bodies = HandleMap.of_alist_exn (List.map ~f:take_handle_body objs);
+    user = { handle = Handle.nil; name = None; }
   }
+
+let t env = env.t
+let dt env = env.dt
+let context env = env.context
+
+let set_user handle name env = { env with user = { handle; name; } }
+let my_handle env = env.user.handle
+let my_name env = env.user.name
+let my_name_exn env = Option.value_exn env.user.name
 
 let next_handle = ref 0 
 let new_handle () =

@@ -18,18 +18,18 @@ type msg =
   | Die
 with sexp
 
-let still_left_sheet =
-  Sprite.make_sheet ~image:"olek_idle_left" ~frames:1 ~dt:0 ~origin:(9, 9)
-let still_right_sheet =
-  Sprite.make_sheet ~image:"olek_idle_right" ~frames:1 ~dt:0 ~origin:(16, 9)
-let run_left_sheet =
-  Sprite.make_sheet ~image:"olek_run_left" ~frames:8 ~dt:60 ~origin:(9, 12)
-let run_right_sheet =
-  Sprite.make_sheet ~image:"olek_run_right" ~frames:8 ~dt:60 ~origin:(20, 12)
-let die_left_sheet =
-  Sprite.make_sheet ~image:"olek_die_left" ~frames:1 ~dt:0 ~origin:(6, 8)
-let die_right_sheet =
-  Sprite.make_sheet ~image:"olek_die_right" ~frames:1 ~dt:0 ~origin:(10, 8)
+let still_left_sheet = Sprite.make_sheet
+  ~image:"olek_idle_left" ~frames:1 ~dt:0 ~origin:(9, 9)
+let still_right_sheet = Sprite.make_sheet
+  ~image:"olek_idle_right" ~frames:1 ~dt:0 ~origin:(16, 9)
+let run_left_sheet = Sprite.make_sheet
+  ~image:"olek_run_left" ~frames:8 ~dt:60 ~origin:(9, 12)
+let run_right_sheet = Sprite.make_sheet
+  ~image:"olek_run_right" ~frames:8 ~dt:60 ~origin:(20, 12)
+let die_left_sheet = Sprite.make_sheet
+  ~image:"olek_die_left" ~frames:1 ~dt:0 ~origin:(6, 8)
+let die_right_sheet = Sprite.make_sheet
+  ~image:"olek_die_right" ~frames:1 ~dt:0 ~origin:(10, 8)
 
 let default_body = Body.(make 0. 0. 12 16 |> set_sprite still_right_sheet) 
 let default_state = {
@@ -59,7 +59,15 @@ let determine_sprite (vel_x, vel_y) dir mode =
   | `Air
   | `Die -> if dir = `Left then die_left_sheet else die_right_sheet
 
-let init state body env init = Cmd.nop
+let init state body env init =
+  let open Cmd in
+  let open Context in
+  let ctx = Env.context env in
+  if ctx.spawn_point <> "" then
+    let spawn_point = Env.named_body env ctx.spawn_point in
+    let pos = Body.pos spawn_point in
+    set_body (Body.set_pos pos body)
+  else nop
 
 let determine_vel_x vel_x dt mode =
   match mode with
