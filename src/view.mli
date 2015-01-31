@@ -2,7 +2,7 @@ open Utils
 
 type t
 
-val make : int * int -> t
+val make : int * int -> Sdlvideo.rect -> t
 
 val offset : t -> int * int
 

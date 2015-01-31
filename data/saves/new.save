@@ -1,4 +1,4 @@
-((room_name ziomek)
+((room_name spring)
   (context (
     (spawn_point "")
   )))

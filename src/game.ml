@@ -46,6 +46,7 @@ let init ~save:save =
   let room = Room.t_of_sexp (Sexp.load_sexp room_filename) in
   let stubs = Room.stubs room in
   let ticks = Sdltimer.get_ticks () in
+  let h, w = Room.dims_px room in
   let time = { 
     frame = 0;
     t_ms = ticks;
@@ -55,12 +56,14 @@ let init ~save:save =
     fps = 0;
   } in {
     room = room;
-    view = View.make (0, 0);
-    objs = List.map ~f:Object.make stubs;
+    view = View.make (0, 0) (Sdlvideo.rect 0 0 w h);
+    (* We reverse the object list because we want the handles to be ordered
+     * decreasingly. Message dispatch relies on that *)
+    objs = List.map ~f:Object.make stubs |> List.rev;
     context = save.context;
     time = time;
     messages = [];
-    pending_inits = stubs;
+    pending_inits = List.rev stubs;
   }
 
 let save state =
@@ -102,9 +105,10 @@ let dispatch_messages env cmdss state =
     | [], _, _ -> List.map2_exn ~f:(fun obj cmds -> (obj, cmds)) objs cmdss
     | (receiver, msgs) :: msgss', obj :: objs', cmds :: cmdss' -> (
       match Env.Handle.compare receiver (Object.handle obj) with
-      | 0 -> Object.receive env msgs obj cmds :: aux msgss' objs' cmdss'
-      | 1 -> (obj, cmds) :: aux msgss objs' cmdss'
-      | _ -> (obj, cmds) :: aux msgss' objs' cmdss' )
+      | -1 -> (obj, cmds) :: aux msgss objs' cmdss'
+      |  0 -> Object.receive env msgs obj cmds :: aux msgss' objs' cmdss'
+      |  1 -> (obj, cmds) :: aux msgss' objs' cmdss'
+      |  _ -> failwith "Game.dispatch_messages.aux: Impossible case" )
     | _, _, _ -> failwith "Game.dispatch_messages.aux: Imposible case" in
   let msgss = state.messages
               |> List.stable_sort ~cmp:msg_compare

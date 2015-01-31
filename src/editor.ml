@@ -18,10 +18,11 @@ let window_width = 800
 let window_height = 600
 
 let make room =
-  let w, h = Room.dims_px room in
+  let h, w = Room.dims_px room in
+  let view_bounds = Sdlvideo.(rect 0 0 w h |> inflate_rect 200) in
   {
     room = room;
-    view = View.make ((w, h) /^ 2);
+    view = View.make ((w, h) /^ 2) view_bounds;
     active_layer = 0;
     active_tileset_tile = 0;
     hover_tile = (0, 0);
@@ -157,7 +158,7 @@ let move_active_layer di state =
     { state with active_layer; room }
 
 let update_hover_tile x y state =
-  let (w, h) = Room.dims state.room in
+  let (h, w) = Room.dims state.room in
   let (x, y) = View.to_world state.view (x, y) in
   let i = clamp ~min:0 ~max:(h - 1) (y / Tile.size) in
   let j = clamp ~min:0 ~max:(w - 1) (x / Tile.size) in

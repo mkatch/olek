@@ -222,7 +222,7 @@ let draw_tiles view grid =
   Grid.iteri ~f:draw_tile grid
 
 let draw_frame view room =
-  let w, h = dims_px room in
+  let h, w = dims_px room in
   let frame = Sdlvideo.rect 0 0 w h |> Sdlvideo.inflate_rect 2 in
   View.draw_rect view Sdlvideo.black frame
 

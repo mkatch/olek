@@ -6,8 +6,8 @@ type t = {
   name : string;
 }
 
-let row_cnt = 10
-let column_cnt = 8
+let row_cnt = 24
+let column_cnt = 10
 let width = column_cnt * Tile.size
 let height = row_cnt * Tile.size
 

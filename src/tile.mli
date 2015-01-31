@@ -2,7 +2,7 @@ type t =
   | Void
   | Solid
   | TopSolid
-  | Sticky
+  | Deadly
 with sexp
 
 val size : int

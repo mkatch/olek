@@ -41,7 +41,7 @@ let default_state = {
 let default_init = ()
 
 let acc_x = 1000.0
-let jump_vel_y = -200.0
+let jump_vel_y = -300.0
 let drag_x = 1000.0
 let grav_y = 600.0
 let max_vel_x = 150.0
@@ -90,8 +90,22 @@ let determine_vel_y vel_y dt mode =
     clamp ~min:(-.max_vel_y) ~max:max_vel_y (vel_y +. dt *. grav_y)
   | `Die -> clamp ~min:(-.max_vel_y) ~max:max_vel_y (vel_y +. dt *. grav_y)
 
+let die state env =
+  Cmd.set_state {
+    vel = ((-0.5) *. (vx state.vel), jump_vel_y);
+    mode = `Die;
+    dir = if state.dir = `Left then `Right else `Left;
+    die_t = Env.t env +. 1.0;
+  }
+
 let handle_collisions state body env =
   let open Cmd in
+  if state.mode <> `Die  && (
+     Env.tile_at (Body.lt body) env = Tile.Deadly
+  || Env.tile_at (Body.rt body) env = Tile.Deadly
+  || Env.tile_at (Body.rb body) env = Tile.Deadly
+  || Env.tile_at (Body.lb body) env = Tile.Deadly )
+  then die state env else
   let (vel_x, vel_y) as vel = state.vel in
   match state.mode with
   | `Ground -> let state, body =
@@ -155,9 +169,4 @@ let receive state body env sender msg =
     let vel = (vel_x, jump_vel_y) in
     set_state { state with vel; mode = `Air } >>
     set_body (Body.move_by (0., dy) body)
-  | Die -> set_state {
-      vel = ((-0.5) *. (vx state.vel), jump_vel_y);
-      mode = `Die;
-      dir = if state.dir = `Left then `Right else `Left;
-      die_t = Env.t env +. 1.0;
-    }
+  | Die -> die state env

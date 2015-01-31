@@ -197,7 +197,8 @@
      (rows 40) (cols 40)))))
  (tileset spring)
  (stubs
-  (((obj_name (cpa)) (mind checkpoint) (pos (209 273)) (init ()))
+  (((obj_name ()) (mind bulb) (pos (285 165)) (init ()))
+   ((obj_name (cpa)) (mind checkpoint) (pos (209 273)) (init ()))
    ((obj_name (cp)) (mind checkpoint) (pos (429 305)) (init ()))
    ((obj_name ()) (mind blob) (pos (349 313)) (init ()))
    ((obj_name (olek)) (mind olek) (pos (274 312)) (init ())))))

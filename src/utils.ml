@@ -5,6 +5,8 @@ module StringMap = Map.Make(String)
 
 include Vector
 
+let two_pi = 6.28318530718
+
 let rec unzip3 = function
   | [] -> ([], [], [])
   | (x, y, z) :: ts ->
