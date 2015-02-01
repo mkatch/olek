@@ -1,7 +1,7 @@
 open Utils
 
 module Handle : sig
-  type t = int
+  type t
   val nil : t
   val compare : t -> t -> int
 end

@@ -10,6 +10,7 @@ type t =
   | Print of string
   | Focus
   | Save
+  | Quit
 
 type 's chain
 
@@ -38,3 +39,4 @@ val set_room : string -> 's chain
 val print : string -> 's chain
 val focus : 's chain
 val save : 's chain
+val quit : 's chain

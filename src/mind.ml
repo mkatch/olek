@@ -41,6 +41,9 @@ let mind_list = [
   (module Seed : MIND);
   (module Checkpoint : MIND);
   (module Gate : MIND);
+  (module Lock : MIND);
+  (module Key : MIND);
+  (module Orb : MIND);
   (module Dummy : MIND);
 ]
 let minds =

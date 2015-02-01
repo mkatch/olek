@@ -2,7 +2,7 @@ open Core.Std
 open Utils
 
 module Handle = struct
-  type t = int with sexp
+  type t = int with sexp (* Sexp is needed by Map *)
   let nil = -1
   let compare = Int.compare
 end

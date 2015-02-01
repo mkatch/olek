@@ -47,6 +47,11 @@ let actual_mod a b =
   if a >= 0 then a mod b
   else (b - ((-a) mod b)) mod b 
 
+let sign x =
+  if x < 0. then -1. else
+  if x > 0. then  1.
+  else 0. 
+
 module Sdlvideo =
 struct
   include Sdlvideo

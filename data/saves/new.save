@@ -1,4 +1,5 @@
 ((room_name spring)
   (context (
     (spawn_point "")
+    (has_key true)
   )))

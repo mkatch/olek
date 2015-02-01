@@ -179,6 +179,7 @@ let process_command obj state cmd =
     let pos = Body.pos (Object.body obj) in
     { state with view = View.focus (v_to_ints pos) state.view }
   | Cmd.Save -> save state; state
+  | Cmd.Quit -> exit 0
 
 let process_commands cmdss state =
   let aux state obj cmds = List.fold ~f:(process_command obj) ~init:state

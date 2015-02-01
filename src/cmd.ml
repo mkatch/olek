@@ -11,6 +11,7 @@ type t =
   | Print of string
   | Focus
   | Save
+  | Quit
 
 type 's chain =
   | Nop
@@ -75,3 +76,5 @@ let print text = Command (Print text)
 let focus = Command Focus
 
 let save = Command Save
+
+let quit = Command Quit

@@ -16,6 +16,7 @@ type init = unit with sexp
 type msg =
   | Bounce of float
   | Die
+  | MoveTo of (float * float)
 with sexp
 
 let still_left_sheet = Sprite.make_sheet
@@ -170,3 +171,4 @@ let receive state body env sender msg =
     set_state { state with vel; mode = `Air } >>
     set_body (Body.move_by (0., dy) body)
   | Die -> die state env
+  | MoveTo pos -> set_body (Body.set_pos pos body)
