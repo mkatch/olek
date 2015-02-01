@@ -26,7 +26,7 @@ let make room =
     active_layer = 0;
     active_tileset_tile = 0;
     hover_tile = (0, 0);
-    tiles_pos = 0;
+    tiles_pos = Room.tiles_pos room;
     mode = `World;
     dragging = `NoDragging;
     draw_tiles = true;
@@ -210,8 +210,11 @@ let save_action text state =
   let do_save = Sys.file_exists filename = `No
              || Terminal.confirm ("Overwrite '" ^ name ^ "'?") in
   if not do_save then state else
-  let state = { state with room = Room.set_name name state.room } in
-  Sexp.save_hum filename (Room.sexp_of_t state.room);
+  let room = state.room
+             |> Room.set_name name
+             |> Room.set_tiles_pos state.tiles_pos in (* TODO Temporary solution *)
+  let state = { state with room } in
+  Sexp.save_hum filename (Room.sexp_of_t room);
   update_caption state;
   Terminal.show ("Saved '" ^ name ^ "'");
   state
@@ -274,7 +277,8 @@ let rem_layer_action text state =
     if not (Terminal.confirm "Remove layer?") then state
     else
       let i = map_editor_to_room state state.active_layer in
-      { state with room = Room.rem_layer i state.room }
+      let tiles_pos = min state.tiles_pos (Room.layer_cnt state.room - 1) in
+      { state with room = Room.rem_layer i state.room; tiles_pos }
 
 let set_repeat_re = Str.regexp
   " *set +repeat +\\(-\\|x\\|y\\|xy\\) *$"

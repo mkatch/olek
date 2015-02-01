@@ -188,8 +188,7 @@ let process_commands cmdss state =
 
 let draw state =
   Canvas.clear Sdlvideo.gray;
-  Room.draw state.view state.room;
-  List.iter ~f:(Object.draw state.view) state.objs;
+  Room.draw state.view state.room ~objs:state.objs;
   Canvas.flip ()
 
 let update_time state =

@@ -1,5 +1,5 @@
 ((room_name spring)
   (context (
-    (spawn_point "")
-    (has_key true)
+    (spawn_point cp1)
+    (has_key false)
   )))

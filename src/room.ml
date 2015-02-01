@@ -49,6 +49,7 @@ type t = {
   name : string;
   tiles : Tile.t Grid.t;
   layers : layer list;
+  tiles_pos : int; (* TODO: Temporary solution *)
   tileset : Tileset.t;
   stubs : Object.stub list;
 }
@@ -58,6 +59,7 @@ let make name row_cnt column_cnt = {
   name = name;
   tiles = Grid.make Tile.Void row_cnt column_cnt;
   layers = [];
+  tiles_pos = 0;
   tileset = Tileset.load "dummy";
   stubs = [];
 }
@@ -68,6 +70,7 @@ let layers room = room.layers
 let tileset room = room.tileset
 let stubs room = room.stubs
 let layer_cnt room = List.length room.layers
+let tiles_pos room = room.tiles_pos
 let row_cnt room = Grid.row_cnt room.tiles
 let column_cnt room = Grid.column_cnt room.tiles
 let dims room = Grid.dims room.tiles
@@ -106,6 +109,8 @@ let move_layer ~src ~dst room =
       |> list_rem src
       |> list_insert layer dst in
     { room with layers }
+
+let set_tiles_pos tiles_pos room = { room with tiles_pos }
 
 let rem_layer i room = { room with layers = list_rem i room.layers }
 
@@ -240,12 +245,19 @@ let draw view
          ?draw_stubs:(d_stubs = false)
          ?draw_stub_frames:(d_stub_frames = false)
          ?only:(only = -2)
+         ?objs:(objs = [])
          room =
   if only >= 0 then
     let layer = List.nth_exn room.layers only in
     draw_layer view room.tileset layer else
-  if only <> -1 then
-    List.iter ~f:(draw_layer view room.tileset) room.layers;
+  if only <> -1 && objs = [] then
+    List.iter ~f:(draw_layer view room.tileset) room.layers else
+  if only <> -1 && objs <> [] then (
+    let pre_objs = List.take room.layers room.tiles_pos in
+    let post_objs = List.drop room.layers room.tiles_pos in
+    List.iter ~f:(draw_layer view room.tileset) pre_objs;
+    List.iter ~f:(Object.draw view) objs;
+    List.iter ~f:(draw_layer view room.tileset) post_objs );
   if d_frame then draw_frame view room;
   if d_tiles && only < 0 then draw_tiles view room.tiles;
   if d_stubs then draw_stubs view room.stubs ~draw_frames:d_stub_frames

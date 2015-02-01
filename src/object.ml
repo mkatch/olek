@@ -33,6 +33,7 @@ let make stub =
   { handle; name; body; mind_instance; }
 
 let init env stub obj =
+  let env = Env.set_user obj.handle obj.name env in
   let (module I : Mind.INSTANCE) = obj.mind_instance in
   let init = I.Mind.init_of_sexp stub.init in
   let chain = I.Mind.init I.state obj.body env init in

@@ -16,6 +16,7 @@ val layers : t -> layer list
 val tileset : t -> Tileset.t
 val stubs : t -> Object.stub list
 val layer_cnt : t -> int
+val tiles_pos : t -> int
 val row_cnt : t -> int
 val column_cnt : t -> int
 val dims : t -> int * int
@@ -29,6 +30,7 @@ val add_image_layer : string -> t -> t
 val add_tiled_layer : t -> t
 
 val move_layer : src:int -> dst:int -> t -> t
+val set_tiles_pos : int -> t -> t
 val rem_layer : int -> t -> t
 
 val set_name : string -> t -> t
@@ -44,5 +46,11 @@ val select_stub : int * int -> t -> t * bool
 val map_selected_stub : f:(Object.stub -> Object.stub) -> t -> t
 val rem_selected_stub : t -> t
 
-val draw : View.t -> ?draw_frame:bool -> ?draw_tiles:bool -> ?draw_stubs:bool
-  -> ?draw_stub_frames:bool -> ?only:int -> t -> unit
+val draw : View.t
+       -> ?draw_frame:bool
+       -> ?draw_tiles:bool
+       -> ?draw_stubs:bool
+       -> ?draw_stub_frames:bool
+       -> ?only:int
+       -> ?objs:Object.t list
+       -> t -> unit

@@ -39,8 +39,8 @@ let think state body env =
   let open Cmd in
   let olek_body = Env.body env state.olek in
   let warp = match state.init.mode with
-  | `Left -> (Body.r olek_body <= Body.r body)
-  | `Right -> (Body.l olek_body >= Body.l body) in
+  | `Left -> (Body.r olek_body <= Body.l body)
+  | `Right -> (Body.l olek_body >= Body.r body) in
   if warp then
     let open Context in
     let aux ctx = { ctx with spawn_point = state.init.dst_spawn_point} in

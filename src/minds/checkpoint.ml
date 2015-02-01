@@ -26,7 +26,16 @@ let default_state = {
 let default_init = ()
 
 let init state body env init =
-  Cmd.set_state { state with olek = Env.handle env "olek" }
+  let open Cmd in
+  let open Context in
+  let ctx = Env.context env in
+  let active = (Env.my_name_exn env = ctx.spawn_point) in
+  let sheet = if active then active_sheet else inactive_sheet in
+  set_state {
+    active;
+    olek = Env.handle env "olek";
+  } >>
+  set_body (Body.set_sprite sheet body)
 
 let is_cp_name name = String.length name >= 2 && String.slice name 0 2 = "cp"
 
@@ -41,7 +50,7 @@ let think state body env =
     set_body (Body.set_sprite active_sheet body) >>
     alter_context (fun ctx -> { ctx with spawn_point = name }) >>
     save >>
-    if is_cp_name ctx.spawn_point then
+    if is_cp_name ctx.spawn_point && ctx.spawn_point <> name then
       send (sexp_of_msg Deactivate) (Env.handle env ctx.spawn_point)
     else nop
   else nop
