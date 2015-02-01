@@ -20,7 +20,7 @@ let sexp_of_image_layer il =
   let (rx, ry) = il.repeat in
   List [
     List [Atom "name"; Atom il.image_name];
-    List [Atom "offset"; Atom (Int.to_string ox); Atom (Int.to_string ox)];
+    List [Atom "offset"; Atom (Int.to_string ox); Atom (Int.to_string oy)];
     List [Atom "repeat"; Atom (Bool.to_string rx); Atom (Bool.to_string ry)];
     List [Atom "parallax"; Atom (Float.to_string il.parallax)]
   ]

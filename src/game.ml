@@ -37,12 +37,13 @@ let window_width = 800
 let window_height = 600
 let fps_cap = 30
 
-let init ~save:save =
+let init_sdl () =
   Sdl.init [`VIDEO];
   Sdlttf.init ();
-  Canvas.init ~w:window_width ~h:window_height;
-  let room_filename =
-    filename_concat ["data"; "rooms"; save.room_name ^ ".room"] in
+  Canvas.init ~w:window_width ~h:window_height
+
+let init ~room_name ~context =
+  let room_filename = filename_concat ["data"; "rooms"; room_name ^ ".room"] in
   let room = Room.t_of_sexp (Sexp.load_sexp room_filename) in
   let stubs = Room.stubs room in
   let ticks = Sdltimer.get_ticks () in
@@ -60,7 +61,7 @@ let init ~save:save =
     (* We reverse the object list because we want the handles to be ordered
      * decreasingly. Message dispatch relies on that *)
     objs = List.map ~f:Object.make stubs |> List.rev;
-    context = save.context;
+    context = context;
     time = time;
     messages = [];
     pending_inits = List.rev stubs;
@@ -172,6 +173,7 @@ let process_command obj state cmd =
                            state.objs in
     { state with objs }
   | Cmd.AlterContext f -> { state with context = f (state.context) }
+  | Cmd.SetRoom name -> init ~room_name:name ~context:state.context
   | Cmd.Print text -> print_endline text; state
   | Cmd.Focus ->
     let pos = Body.pos (Object.body obj) in
@@ -227,8 +229,9 @@ let rec loop state =
 
 let main () =
   at_exit quit;
+  init_sdl ();
   let save_filename = filename_concat ["data"; "saves"; "new.save"] in
   let save = save_of_sexp (Sexp.load_sexp save_filename) in
-  loop (init ~save:save)
+  loop (init ~room_name:save.room_name ~context:save.context)
 
 let () = main ()

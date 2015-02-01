@@ -7,6 +7,7 @@ type t =
   | Remove of Env.handle
   | RemoveMe
   | AlterContext of (Context.t -> Context.t)
+  | SetRoom of string
   | Print of string
   | Focus
   | Save
@@ -65,8 +66,9 @@ let spawn ?name:(name = "")
 let remove handle = Command (Remove handle)
 let remove_me = Command RemoveMe
 
-
 let alter_context f = Command (AlterContext f)
+
+let set_room name = Command (SetRoom name)
 
 let print text = Command (Print text)
 

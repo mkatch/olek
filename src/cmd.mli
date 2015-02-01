@@ -6,6 +6,7 @@ type t =
   | Remove of Env.handle
   | RemoveMe
   | AlterContext of (Context.t -> Context.t)
+  | SetRoom of string
   | Print of string
   | Focus
   | Save
@@ -33,6 +34,7 @@ val spawn : ?name:string
 val remove : Env.handle -> 's chain
 val remove_me : 's chain
 val alter_context : (Context.t -> Context.t) -> 's chain
+val set_room : string -> 's chain
 val print : string -> 's chain
 val focus : 's chain
 val save : 's chain

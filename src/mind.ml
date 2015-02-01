@@ -40,6 +40,7 @@ let mind_list = [
   (module Bulb : MIND);
   (module Seed : MIND);
   (module Checkpoint : MIND);
+  (module Gate : MIND);
   (module Dummy : MIND);
 ]
 let minds =
