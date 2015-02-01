@@ -316,7 +316,7 @@ let add_obj_action text state =
     { state with room = Room.add_stub stub state.room }
 
 let set_name_re = Str.regexp
-  " *set +name *\\(-\\|[a-z]+\\) *$"
+  " *set +name *\\(-\\|[a-z0-9]+\\) *$"
 let set_name_action text state =
   let name = Str.matched_group 1 text in
   let name = if name = "-" then None else Some name in

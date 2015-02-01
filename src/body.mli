@@ -20,6 +20,7 @@ val rt : t -> float * float
 val rb : t -> float * float
 val lb : t -> float * float
 val sprite : t -> Sprite.t
+val visible : t -> bool
 val rect : t -> Sdlvideo.rect
 
 val set_x : float -> t -> t
@@ -30,6 +31,7 @@ val set_w : int -> t -> t
 val set_h : int -> t -> t
 val set_dims : int * int -> t -> t
 val set_sprite : Sprite.sheet -> ?force:bool -> t -> t
+val set_visible : bool -> t -> t
 
 val advance_sprite : int -> t -> t
 

@@ -32,7 +32,8 @@ let default_state = {
 
 let init state body env init =
   let open Cmd in
-  set_state { olek = Env.handle env "olek"; init }
+  set_state { olek = Env.handle env "olek"; init } >>
+  set_body (Body.set_visible false body)
 
 let think state body env =
   let open Cmd in
