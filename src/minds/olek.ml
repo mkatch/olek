@@ -63,6 +63,7 @@ let determine_sprite (vel_x, vel_y) dir mode =
 let init state body env init =
   let open Cmd in
   let open Context in
+  save >>
   let ctx = Env.context env in
   if ctx.spawn_point <> "" then
     let spawn_point = Env.named_body env ctx.spawn_point in

@@ -69,7 +69,7 @@ let init ~room_name ~context =
 
 let save state =
   let save = { room_name = Room.name state.room; context = state.context } in
-  let filename = filename_concat ["data"; "saves"; "contunue.save"] in
+  let filename = filename_concat ["data"; "saves"; "continue.save"] in
   Sexp.save_hum filename (sexp_of_save save)
 
 let quit () =
@@ -230,7 +230,11 @@ let rec loop state =
 let main () =
   at_exit quit;
   init_sdl ();
-  let save_filename = filename_concat ["data"; "saves"; "new.save"] in
+  let continue_filename = filename_concat ["data"; "saves"; "continue.save"] in
+  let new_filename = filename_concat ["data"; "saves"; "new.save"] in
+  let save_filename =
+    if Sys.file_exists continue_filename = `Yes then continue_filename
+    else new_filename in
   let save = save_of_sexp (Sexp.load_sexp save_filename) in
   loop (init ~room_name:save.room_name ~context:save.context)
 
