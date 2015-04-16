@@ -13,6 +13,23 @@ is a full featured level editor. It was my final project for the Functional Prog
 Build
 =====
 
+Prerequisites:
+
+   * `OCaml (4.01.0)` with `ocamlopt`, `ocamlbuild`, `ocamlfind`
+   * OCaml packages: `core (111.28.01)`, `ocamlsdl (0.9.1)`
+   * `SDL 1.2` with `SDL_ttf` and `SDL_image`.
+
+If you install OCaml packages using `opam`, make sure you have the SDL library, along with the addons,
+already installed before you start installing `ocamlsdl`. The version numbers provided in brackets
+are the ones I used on my machine, some older verstions may or may not work.
+
+To compile, use the shell script `make`, i.e., to build the game application, invoke `./make game` (not to
+be confused with `make game`), to build the editor, use `./make editor`. To build everything and clean
+the intermediate files, you can invoke `./make game editor clean`.
+
+On systems other than Linux or OS X, you may peek inside the `make` script and try to figure it out yourself.
+This shouldn't be complicated, but I didn't try it on, e.g., Windows.
+
 Instructions
 ============
 
