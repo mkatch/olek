@@ -6,6 +6,10 @@ programming skills and create a non-trivial interactive application in a fuction
 is a full featured level editor. It was my final project for the Functional Programming course during
 2014/15 at Univerity of Wrocław.
 
+![Game](screenshot_game.png)
+
+![Editor](screenshot_editor.png)
+
 Build
 =====
 
